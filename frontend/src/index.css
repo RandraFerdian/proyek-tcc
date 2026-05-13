@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Memastikan aplikasi memenuhi layar (Penting untuk Mapbox) */
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Mencegah scroll ganda */
+  background-color: #f8fafc;
+}
