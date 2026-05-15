@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .api import auth_routes
+from .api import auth_routes, employee_routes
 from .database import engine, Base
 
 
 
 # Import semua router
-from .api import package_routes, order_routes, user_routes, courier_routes, route_routes, customer_routes
+from .api import package_routes, order_routes, courier_routes, route_routes, customer_routes
 # Import Firebase service
 from .services.firebase_service import init_firebase
 
@@ -32,7 +32,7 @@ app.add_middleware(
 
 
 # Registrasi Router Modular
-app.include_router(user_routes.router, prefix="/api/v1")
+app.include_router(employee_routes.router, prefix="/api/v1")
 app.include_router(package_routes.router, prefix="/api/v1")
 app.include_router(order_routes.router, prefix="/api/v1")
 app.include_router(courier_routes.router, prefix="/api/v1")

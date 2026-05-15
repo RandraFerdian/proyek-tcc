@@ -1,32 +1,20 @@
-import { useState, useEffect } from "react";
-import { useNavigate, Link, useSearchParams } from "react-router-dom";
-import {
-  Mail,
-  Lock,
-  ArrowRight,
-  ArrowLeft,
-  User,
-  Package,
-} from "lucide-react";
+import { useState } from "react";
+import { Mail, Lock, ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
 import api from "../services/api";
 
 const CustomerLogin = () => {
-  const [searchParams] = useSearchParams();
-  const [isRegister, setIsRegister] = useState(false);
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const navigate = useNavigate();
-
-  // Cek query param ?register=true dari landing page
-  useEffect(() => {
-    if (searchParams.get("register") === "true") {
-      setIsRegister(true);
-    }
-  }, [searchParams]);
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,149 +22,95 @@ const CustomerLogin = () => {
     setError("");
 
     try {
-      if (isRegister) {
-        await api.post("/customers/", { name, email, password });
-        setIsRegister(false);
-        setError("Registrasi berhasil! Silakan login.");
-        setLoading(false);
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("username", email);
-      formData.append("password", password);
-
-      const response = await api.post(`/auth/login?role_hint=user`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      if (response.data.access_token) {
-        localStorage.setItem("token", response.data.access_token);
-        localStorage.setItem("user_role", response.data.role);
+      const response = await api.post("/auth/customer/login", formData);
+      
+      // Memastikan token atau access_token dari FastAPI berhasil dibaca
+      if (response.data && (response.data.token || response.data.access_token)) {
+        
+        // 1. Simpan token utama untuk penjaga gerbang
+        localStorage.setItem("token", response.data.token || response.data.access_token);
+        
+        // 2. Simpan role 'user' agar lolos pengecekan ProtectedRoute
+        localStorage.setItem("user_role", response.data.role || "user");
+        
+        // 3. Simpan data profil customer
         localStorage.setItem("user_id", response.data.user_id);
-        navigate("/order-food");
+        localStorage.setItem("user_name", response.data.name || "Pelanggan");
+
+        // 4. Pindah ke halaman utama katering
+        navigate("/customer/home");
       }
     } catch (err) {
-      console.error("Auth error:", err);
-      setError(
-        err.response?.data?.detail ||
-          "Terjadi kesalahan. Periksa kembali data Anda."
-      );
+      setError(err.response?.data?.detail || "Email atau password salah.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 relative overflow-hidden font-sans">
-      {/* Subtle background accents */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-32 -right-32 w-[400px] h-[400px] bg-blue-100/30 rounded-full blur-[100px]" />
-        <div className="absolute -bottom-32 -left-32 w-[300px] h-[300px] bg-indigo-100/30 rounded-full blur-[100px]" />
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#F4F7FB] p-4 font-['Plus_Jakarta_Sans']">
+      {/* Background Ambient Decor */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] -right-[5%] w-[400px] h-[400px] bg-blue-200/30 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[-10%] -left-[5%] w-[400px] h-[400px] bg-indigo-200/30 rounded-full blur-[100px]" />
       </div>
 
-      {/* Back Button ke Landing Page */}
-      <Link
-        to="/"
-        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-slate-400 hover:text-slate-700 transition-colors font-semibold text-sm group"
-      >
-        <ArrowLeft
-          size={18}
-          className="group-hover:-translate-x-1 transition-transform"
-        />
-        <span>Beranda</span>
-      </Link>
+      <div className="relative z-10 w-full max-w-[460px]">
+        <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-white p-8 md:p-10">
+          {/* Logo / Icon Brand */}
+          <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white mb-8 shadow-lg shadow-blue-500/30 animate-pulse">
+            <ShieldCheck size={26} />
+          </div>
 
-      {/* Login Card */}
-      <div className="relative z-10 max-w-md w-full mx-4">
-        <div className="bg-white rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
           {/* Header */}
-          <div className="pt-12 pb-6 px-8 text-center bg-gradient-to-b from-blue-50/60 to-transparent">
-            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg shadow-blue-600/20">
-              <Package size={32} className="text-white" />
-            </div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-              {isRegister ? "Buat Akun" : "Masuk"}
+          <div className="mb-10">
+            <h1 className="text-4xl font-[800] text-slate-900 tracking-tight leading-tight">
+              Selamat <br />Datang <span className="text-blue-600">Kembali.</span>
             </h1>
-            <p className="text-slate-500 mt-1.5 font-medium">
-              {isRegister
-                ? "Daftar untuk mulai memesan katering"
-                : "Masuk ke akun pelanggan Anda"}
+            <p className="text-slate-500 mt-3 font-medium">
+              Silakan masuk ke akun customer Anda untuk mengelola pesanan.
             </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="px-8 pb-10 space-y-4">
-            {error && (
-              <div
-                className={`p-3 border text-xs font-bold rounded-xl ${
-                  error.includes("berhasil")
-                    ? "bg-emerald-50 border-emerald-100 text-emerald-600"
-                    : "bg-rose-50 border-rose-100 text-rose-600"
-                }`}
-              >
-                {error}
-              </div>
-            )}
+          {error && (
+            <div className="mb-6 p-4 bg-rose-50 border border-rose-100 text-rose-600 text-xs font-bold rounded-2xl flex items-center gap-3">
+              <div className="w-1.5 h-1.5 rounded-full bg-rose-600" />
+              {error}
+            </div>
+          )}
 
-            {isRegister && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
-                  Nama Lengkap
-                </label>
-                <div className="relative group">
-                  <User
-                    size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"
-                  />
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Nama Lengkap"
-                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-700"
-                  />
-                </div>
-              </div>
-            )}
-
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Field: Email */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
-                Email
-              </label>
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.1em] ml-2">Email Anda</label>
               <div className="relative group">
-                <Mail
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"
-                />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={19} />
                 <input
                   type="email"
+                  name="email"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="email@contoh.com"
-                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-700"
+                  placeholder="user@mail.com"
+                  className="w-full pl-12 pr-4 py-4 bg-slate-100/50 border-2 border-transparent focus:border-blue-500/20 focus:bg-white focus:ring-4 focus:ring-blue-500/5 outline-none rounded-[1.25rem] text-sm font-semibold text-slate-800 transition-all"
+                  onChange={handleChange}
                 />
               </div>
             </div>
 
+            {/* Field: Password */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
-                Password
-              </label>
+              <div className="flex justify-between items-center px-2">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.1em]">Password</label>
+                <a href="#" className="text-xs font-bold text-slate-400 hover:text-blue-600 transition-colors">Lupa?</a>
+              </div>
               <div className="relative group">
-                <Lock
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"
-                />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={19} />
                 <input
                   type="password"
+                  name="password"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-700"
+                  className="w-full pl-12 pr-4 py-4 bg-slate-100/50 border-2 border-transparent focus:border-blue-500/20 focus:bg-white focus:ring-4 focus:ring-blue-500/5 outline-none rounded-[1.25rem] text-sm font-semibold text-slate-800 transition-all"
+                  onChange={handleChange}
                 />
               </div>
             </div>
@@ -184,44 +118,37 @@ const CustomerLogin = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-blue-600 text-white font-black rounded-2xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center justify-center gap-2 group active:scale-[0.98] disabled:opacity-70"
+              className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-bold text-base shadow-xl shadow-slate-900/10 hover:bg-blue-600 hover:shadow-blue-500/20 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 group mt-6"
             >
-              {loading
-                ? "Menghubungkan..."
-                : isRegister
-                ? "Daftar Akun"
-                : "Masuk Sekarang"}
-              {!loading && (
-                <ArrowRight
-                  size={20}
-                  className="group-hover:translate-x-1 transition-transform"
-                />
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  Masuk Sekarang
+                  <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                </>
               )}
             </button>
-
-            <div className="text-center pt-2">
-              <p className="text-xs text-slate-500 font-medium">
-                {isRegister ? "Sudah punya akun?" : "Belum punya akun?"}{" "}
-                <span
-                  onClick={() => {
-                    setIsRegister(!isRegister);
-                    setError("");
-                  }}
-                  className="text-blue-600 cursor-pointer font-bold hover:underline"
-                >
-                  {isRegister ? "Login di sini" : "Daftar sekarang"}
-                </span>
-              </p>
-            </div>
           </form>
-        </div>
-      </div>
 
-      {/* Footer */}
-      <div className="absolute bottom-6 text-center">
-        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">
-          © 2026 Katering Stich • Monitoring System v1.0
-        </p>
+          <div className="mt-8 text-center">
+            <p className="text-sm text-slate-500 font-medium">
+              Belum memiliki akun?{" "}
+              <Link to="/customer/register" className="text-blue-600 font-bold hover:underline underline-offset-4">
+                Daftar Akun Baru
+              </Link>
+            </p>
+          </div>
+        </div>
+
+        {/* Footer Note */}
+        <div className="mt-8 flex items-center justify-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+          <div className="flex items-center gap-1">
+            <CheckCircle2 size={12} /> Secure Server
+          </div>
+          <div className="w-1 h-1 bg-slate-300 rounded-full" />
+          <div>Terenkripsi</div>
+        </div>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-from .package import PackageOut  # <-- Import ini
+from .package_schema import PackageOut  # <-- Import ini
 
 class OrderBase(BaseModel):
     order_code: Optional[str] = None

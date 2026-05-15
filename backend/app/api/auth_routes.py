@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from datetime import timedelta
 
 from ..database import get_db
-from ..models.user import User
-from ..models.customer import Customer
+from ..models.employee_model import Employees
+from ..models.customer_model import Customer
 from ..core.security import create_access_token, verify_password
 from ..core.config import settings
 
@@ -16,7 +16,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), role_hint: str = "us
     user = None
     role = role_hint
     if role_hint == "admin":
-        user = db.query(User).filter(User.email == form_data.username).first()
+        user = db.query(Employees).filter(Employees.email == form_data.username).first()
     else:
         user = db.query(Customer).filter(Customer.email == form_data.username).first()
     if not user:
@@ -24,7 +24,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), role_hint: str = "us
             user = db.query(Customer).filter(Customer.email == form_data.username).first()
             role = "user"
         else:
-            user = db.query(User).filter(User.email == form_data.username).first()
+            user = db.query(Employees).filter(Employees.email == form_data.username).first()
             role = "admin"
     if not user:
         raise HTTPException(status_code=400, detail="Email tidak terdaftar")

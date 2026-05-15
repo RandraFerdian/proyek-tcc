@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
-class UserBase(BaseModel):
+class EmployeeBase(BaseModel):
     name: str
     email: Optional[str] = None
     phone: Optional[str] = None
@@ -11,12 +11,12 @@ class UserBase(BaseModel):
     building_address: Optional[str] = None
     coordinates: Optional[str] = None
 
-# Saat registrasi Admin baru, wajib kirim password mentah
-class UserCreate(UserBase):
+# Saat registrasi Employee baru, wajib kirim password mentah
+class EmployeeCreate(EmployeeBase):
     password: str 
 
 # Saat mengirim data ke Frontend, HANYA kolom ini yang dikirim (TIDAK ADA PASSWORD)
-class UserOut(UserBase):
+class EmployeeOut(EmployeeBase):
     id: int
     createdAt: Optional[datetime] = None
     updatedAt: Optional[datetime] = None

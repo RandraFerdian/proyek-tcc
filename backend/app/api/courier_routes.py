@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..models.courier import Courier
-from ..schemas.courier import CourierCreate, CourierOut
+from ..models.courier_model import Courier
+from ..schemas.courier_schema import CourierCreate, CourierOut
 
 router = APIRouter(prefix="/couriers", tags=["Couriers"])
 

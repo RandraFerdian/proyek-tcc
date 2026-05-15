@@ -1,79 +1,98 @@
 from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
-from ..database import get_db
-from ..models.order import Order
-from ..schemas.order import OrderCreate, OrderOut
 from pydantic import BaseModel
-from ..services.firebase_service import log_delivery_event_to_nosql
+
+from ..database import get_db
+from ..models.order_model import Order
+from ..models.address_model import Address # <-- Import model address yang baru dibuat
+from ..core.security import get_current_customer 
+from ..schemas.order_schema import OrderOut
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
-# 1. Mendapatkan semua daftar pesanan
-@router.get("/", response_model=list[OrderOut])
-def get_all_orders(customer_id: Optional[int] = None, db: Session = Depends(get_db)):
-    query = db.query(Order)
-    if customer_id:
-        query = query.filter(Order.customer_id == customer_id)
-    return query.all()
+# --- PAYLOAD KUSTOM UNTUK CHECKOUT ---
+class OrderCheckoutPayload(BaseModel):
+    customer_id: int
+    package_id: int
+    quantity: int
+    status: str
+    payment_method: str
+    notes: str
+    street: str
+    lat: float
+    lng: float
 
-
-# 2. Membuat pesanan baru
-@router.post("/", response_model=OrderOut)
-def create_order(order: OrderCreate, db: Session = Depends(get_db)):
-    # order.model_dump() mengubah data dari Pydantic menjadi dictionary (JSON)
-    new_order = Order(**order.model_dump())
+# 1. Mendapatkan pesanan dan lokasinya untuk ditampilkan di Map User
+@router.get("/me")
+def get_my_orders(db: Session = Depends(get_db), current_user = Depends(get_current_customer)):
+    orders = db.query(Order).filter(Order.customer_id == current_user.id).all()
     
+    result = []
+    for order in orders:
+        # Ambil data alamat dari tabel addresses berdasarkan address_id di order
+        address = db.query(Address).filter(Address.id == order.address_id).first()
+        
+        # Hitung total harga
+        price_per_package = order.package.price if order.package else 0
+        total_p = order.total_price if order.total_price else (price_per_package * order.quantity)
+
+        order_data = {
+            "id": order.id,
+            "quantity": order.quantity,
+            "status": order.status,
+            "created_at": order.created_at,
+            "package": order.package,
+            "total_price": total_p,
+            "payment_method": order.payment_method,
+            # Ambil koordinat dari tabel addresses
+            "lat": address.lat if address else None, 
+            "lng": address.lng if address else None,
+        }
+        result.append(order_data)
+        
+    return result
+
+# 2. Membuat Pesanan Baru (Sekaligus menyimpan Alamat)
+@router.post("/")
+def create_order(payload: OrderCheckoutPayload, db: Session = Depends(get_db)):
     try:
+        # STEP A: Simpan Alamat ke tabel addresses
+        new_address = Address(
+            customer_id=payload.customer_id,
+            street=payload.street,
+            lat=payload.lat,
+            lng=payload.lng
+        )
+        db.add(new_address)
+        db.flush() # Gunakan flush agar kita bisa langsung mendapatkan new_address.id
+        
+        # STEP B: Buat pesanan di tabel orders menggunakan address_id tersebut
+        new_order = Order(
+            customer_id=payload.customer_id,
+            package_id=payload.package_id,
+            quantity=payload.quantity,
+            total_price=0, # Akan dihitung di frontend/me
+            status=payload.status,
+            payment_method=payload.payment_method,
+            notes=payload.notes,
+            address_id=new_address.id # <-- Hubungkan pesanan dengan alamat
+        )
         db.add(new_order)
         db.commit()
         db.refresh(new_order)
+        
         return new_order
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail=f"Gagal membuat pesanan: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Gagal memproses pesanan: {str(e)}")
 
-# 3. Mendapatkan detail pesanan berdasarkan ID (Opsional, tapi sangat berguna)
-@router.get("/{order_id}", response_model=OrderOut)
-def get_order_by_id(order_id: int, db: Session = Depends(get_db)):
-    order = db.query(Order).filter(Order.id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="Pesanan tidak ditemukan")
-    return order
-
-class OrderStatusUpdate(BaseModel):
-    status: str
-    location: Optional[dict] = None
-
-# --- UPDATE STATUS & TRIGGER FIREBASE ---
-@router.put("/{order_id}/status", response_model=OrderOut)
-def update_order_status(order_id: int, status_data: OrderStatusUpdate, db: Session = Depends(get_db)):
-    order = db.query(Order).filter(Order.id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="Pesanan tidak ditemukan")
-    
-    # Update di MySQL
-    setattr(order, "status", status_data.status)
-    db.commit()
-    db.refresh(order)
-    
-    # Push ke Firebase (Untuk Live Tracking di Map)
-    log_delivery_event_to_nosql(
-        order_id=order_id, 
-        status=status_data.status, 
-        location=status_data.location
-    )
-    
-    return order
-
-# --- DELETE ORDER ---
+# Endpoint lain dibiarkan kosong untuk disesuaikan kebutuhan
 @router.delete("/{order_id}")
 def delete_order(order_id: int, db: Session = Depends(get_db)):
     order = db.query(Order).filter(Order.id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=404, detail="Pesanan tidak ditemukan")
-    
-    db.delete(order)
-    db.commit()
-    return {"message": f"Pesanan dengan ID {order_id} berhasil dihapus"}
+    if order:
+        db.delete(order)
+        db.commit()
+    return {"message": "Dihapus"}

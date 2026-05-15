@@ -4,11 +4,11 @@ import {
   TrendingUp,
   CheckCircle,
   Clock,
-  MoreHorizontal,
+  Edit2,
+  Trash2,
   Plus,
   X,
-  Edit2,
-  Trash2
+  RefreshCw,
 } from "lucide-react";
 import api from "../services/api";
 
@@ -27,7 +27,7 @@ const Dashboard = () => {
     courier_id: "",
     quantity: 1,
     status: "pending",
-    notes: ""
+    notes: "",
   });
 
   useEffect(() => {
@@ -38,7 +38,6 @@ const Dashboard = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      // Admin sees all orders by default
       const response = await api.get("/orders/");
       setOrders(response.data);
     } catch (error) {
@@ -53,24 +52,27 @@ const Dashboard = () => {
       const [pkgs, curs, custs] = await Promise.all([
         api.get("/packages/"),
         api.get("/couriers/"),
-        api.get("/customers/") // Changed from /users/ to /customers/
+        api.get("/customers/"),
       ]);
       setPackages(pkgs.data);
       setCouriers(curs.data);
-      setUsers(custs.data); // Store customer data in the 'users' state for the dropdown
+      setUsers(custs.data);
     } catch (error) {
       console.error("Error fetching selection data:", error);
     }
   };
 
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ 
-      ...formData, 
-      [name]: ["customer_id", "package_id", "courier_id", "quantity"].includes(name) 
-        ? (value === "" ? "" : Number(value)) 
-        : value 
+    setFormData({
+      ...formData,
+      [name]: ["customer_id", "package_id", "courier_id", "quantity"].includes(
+        name,
+      )
+        ? value === ""
+          ? ""
+          : Number(value)
+        : value,
     });
   };
 
@@ -78,14 +80,14 @@ const Dashboard = () => {
     e.preventDefault();
     try {
       if (editingId) {
-        // Use the generic update if available or specific status update if only status changes
-        // For now let's assume we need a generic update endpoint on backend or use the status one if that's all we have
-        // Since I haven't added a generic PUT /orders/{id} yet, let's just do status update for now or add the generic one
-        await api.put(`/orders/${editingId}/status`, { status: formData.status });
+        await api.put(`/orders/${editingId}/status`, {
+          status: formData.status,
+        });
       } else {
         await api.post("/orders/", {
           ...formData,
-          order_code: formData.order_code || `ORD-${Date.now().toString().slice(-6)}`
+          order_code:
+            formData.order_code || `ORD-${Date.now().toString().slice(-6)}`,
         });
       }
       setIsModalOpen(false);
@@ -104,7 +106,7 @@ const Dashboard = () => {
       courier_id: "",
       quantity: 1,
       status: "pending",
-      notes: ""
+      notes: "",
     });
     setEditingId(null);
   };
@@ -117,7 +119,7 @@ const Dashboard = () => {
       courier_id: order.courier_id || "",
       quantity: order.quantity || 1,
       status: order.status || "pending",
-      notes: order.notes || ""
+      notes: order.notes || "",
     });
     setEditingId(order.id);
     setIsModalOpen(true);
@@ -135,11 +137,11 @@ const Dashboard = () => {
   };
 
   const getStatusIcon = (status) => {
-    switch (status) {
-      case "In Transit":
+    switch (status.toLowerCase()) {
+      case "in transit":
       case "dikirim":
         return <TrendingUp size={14} />;
-      case "Delivered":
+      case "delivered":
       case "selesai":
         return <CheckCircle size={14} />;
       default:
@@ -148,11 +150,11 @@ const Dashboard = () => {
   };
 
   const getStatusStyle = (status) => {
-    switch (status) {
-      case "In Transit":
+    switch (status.toLowerCase()) {
+      case "in transit":
       case "dikirim":
         return "bg-blue-50 text-blue-600 border-blue-100";
-      case "Delivered":
+      case "delivered":
       case "selesai":
         return "bg-emerald-50 text-emerald-600 border-emerald-100";
       default:
@@ -170,14 +172,22 @@ const Dashboard = () => {
     },
     {
       title: "Sedang Dikirim",
-      value: orders.filter((o) => ["In Transit", "dikirim"].includes(o.status)).length.toString(),
+      value: orders
+        .filter((o) =>
+          ["In Transit", "dikirim"].includes(o.status.toLowerCase()),
+        )
+        .length.toString(),
       icon: <TrendingUp size={24} className="text-amber-600" />,
       bg: "bg-amber-50",
       ring: "ring-amber-100",
     },
     {
       title: "Selesai",
-      value: orders.filter((o) => ["Delivered", "selesai"].includes(o.status)).length.toString(),
+      value: orders
+        .filter((o) =>
+          ["Delivered", "selesai"].includes(o.status.toLowerCase()),
+        )
+        .length.toString(),
       icon: <CheckCircle size={24} className="text-emerald-600" />,
       bg: "bg-emerald-50",
       ring: "ring-emerald-100",
@@ -185,8 +195,8 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="p-8 h-full overflow-y-auto bg-slate-50">
-      <div className="flex justify-between items-end mb-8">
+    <div className="p-4 md:p-8 h-full overflow-y-auto bg-slate-50">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
             Overview Katering
@@ -195,15 +205,17 @@ const Dashboard = () => {
             Pantau performa pengiriman dan pesanan hari ini.
           </p>
         </div>
-        <button 
-          onClick={() => { resetForm(); setIsModalOpen(true); }}
-          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-600/20 active:scale-95"
+        <button
+          onClick={() => {
+            resetForm();
+            setIsModalOpen(true);
+          }}
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-600/20 active:scale-95"
         >
           <Plus size={18} strokeWidth={2.5} /> Tambah Pesanan
         </button>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {stats.map((stat, idx) => (
           <div
@@ -229,60 +241,103 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Data Table */}
       <div className="bg-white rounded-[1.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-slate-100 overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white/50 backdrop-blur-sm">
           <h3 className="text-xl font-bold text-slate-800">Pesanan Terbaru</h3>
-          <button className="text-sm font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-4 py-2 rounded-lg transition-colors" onClick={fetchOrders}>
-            Refresh
+          <button
+            onClick={fetchOrders}
+            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group"
+            title="Refresh Data"
+          >
+            <RefreshCw
+              size={18}
+              className="group-active:rotate-180 transition-transform duration-500"
+            />
           </button>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
               <tr className="bg-slate-50/50 text-slate-500 text-sm border-b border-slate-100">
-                <th className="py-4 px-6 font-semibold tracking-wide">ID Order</th>
-                <th className="py-4 px-6 font-semibold tracking-wide">Pelanggan</th>
+                <th className="py-4 px-6 font-semibold tracking-wide">
+                  ID Order
+                </th>
+                <th className="py-4 px-6 font-semibold tracking-wide">
+                  Pelanggan
+                </th>
                 <th className="py-4 px-6 font-semibold tracking-wide">Paket</th>
-                <th className="py-4 px-6 font-semibold tracking-wide">Status</th>
-                <th className="py-4 px-6 font-semibold text-right tracking-wide">Aksi</th>
+                <th className="py-4 px-6 font-semibold tracking-wide">
+                  Status
+                </th>
+                <th className="py-4 px-6 font-semibold text-right tracking-wide">
+                  Aksi
+                </th>
               </tr>
             </thead>
             <tbody className="text-sm">
               {loading ? (
                 <tr>
-                  <td colSpan="5" className="py-8 text-center text-slate-500">
-                    Memuat data...
+                  <td
+                    colSpan="5"
+                    className="py-12 text-center text-slate-500 font-medium animate-pulse"
+                  >
+                    Memuat data pesanan...
                   </td>
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="py-8 text-center text-slate-500">
-                    Belum ada pesanan.
+                  <td colSpan="5" className="py-16">
+                    <div className="flex flex-col items-center justify-center text-center">
+                      <div className="w-16 h-16 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center mb-4">
+                        <PackageIcon size={32} className="text-slate-300" />
+                      </div>
+                      <p className="text-slate-600 font-bold text-base">
+                        Belum ada pesanan masuk
+                      </p>
+                      <p className="text-slate-400 text-sm mt-1">
+                        Pesanan dari pelanggan akan otomatis muncul di sini.
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 orders.map((order) => (
-                  <tr key={order.id} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors group">
-                    <td className="py-4 px-6 font-bold text-slate-700">{order.order_code || `#ORD-${order.id}`}</td>
+                  <tr
+                    key={order.id}
+                    className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors group"
+                  >
+                    <td className="py-4 px-6 font-bold text-slate-700">
+                      {order.order_code || `#ORD-${order.id}`}
+                    </td>
                     <td className="py-4 px-6 text-slate-600 font-medium">
-                      {users.find(u => u.id === order.customer_id)?.name || `Pelanggan #${order.customer_id}`}
+                      {users.find((u) => u.id === order.customer_id)?.name ||
+                        `Pelanggan #${order.customer_id}`}
                     </td>
                     <td className="py-4 px-6 text-slate-500">
-                      {order.package ? order.package.package_name : `Paket #${order.package_id}`}
+                      {order.package
+                        ? order.package.package_name
+                        : `Paket #${order.package_id}`}
                     </td>
                     <td className="py-4 px-6">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold border ${getStatusStyle(order.status)}`}>
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold border uppercase tracking-wider ${getStatusStyle(order.status)}`}
+                      >
                         {getStatusIcon(order.status)} {order.status}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => handleEdit(order)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
+                      <div className="flex justify-end gap-1.5">
+                        <button
+                          onClick={() => handleEdit(order)}
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
                           <Edit2 size={18} />
                         </button>
-                        <button onClick={() => handleDelete(order.id)} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors">
+                        <button
+                          onClick={() => handleDelete(order.id)}
+                          className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                        >
                           <Trash2 size={18} />
                         </button>
                       </div>
@@ -295,89 +350,119 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="text-xl font-bold text-slate-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          {/* Animasi smooth saat modal terbuka */}
+          <div className="bg-white rounded-[2rem] w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h3 className="text-xl font-black text-slate-800">
                 {editingId ? "Edit Pesanan" : "Tambah Pesanan"}
               </h3>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-lg">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
+              >
                 <X size={20} />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form
+              onSubmit={handleSubmit}
+              className="p-6 space-y-4 max-h-[70vh] overflow-y-auto"
+            >
               {!editingId && (
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Kode Pesanan (Opsional)</label>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Kode Pesanan (Opsional)
+                  </label>
                   <input
                     type="text"
                     name="order_code"
                     value={formData.order_code}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-                    placeholder="Auto-generated if empty"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
+                    placeholder="Otomatis terisi jika kosong"
                   />
                 </div>
               )}
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Pelanggan</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Pelanggan
+                </label>
                 <select
                   name="customer_id"
                   value={formData.customer_id}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium text-slate-700"
                 >
                   <option value="">Pilih Pelanggan</option>
-                  {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Paket</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Paket Katering
+                </label>
                 <select
                   name="package_id"
                   value={formData.package_id}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium text-slate-700"
                 >
                   <option value="">Pilih Paket</option>
-                  {packages.map(p => <option key={p.id} value={p.id}>{p.package_name}</option>)}
+                  {packages.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.package_name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Kurir</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                  Kurir Pengantar
+                </label>
                 <select
                   name="courier_id"
                   value={formData.courier_id}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium text-slate-700"
                 >
                   <option value="">Pilih Kurir (Opsional)</option>
-                  {couriers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {couriers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Jumlah</label>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Jumlah
+                  </label>
                   <input
                     type="number"
                     name="quantity"
                     value={formData.quantity}
                     onChange={handleInputChange}
                     min="1"
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Status</label>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Status
+                  </label>
                   <select
                     name="status"
                     value={formData.status}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-bold"
                   >
                     <option value="pending">Pending</option>
                     <option value="dikirim">Dikirim</option>
@@ -386,9 +471,20 @@ const Dashboard = () => {
                   </select>
                 </div>
               </div>
-              <div className="pt-2 flex gap-3">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition-colors">Batal</button>
-                <button type="submit" className="flex-1 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-600/20 active:scale-95">Simpan</button>
+              <div className="pt-4 flex gap-3 border-t border-slate-100 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-600/20 active:scale-95"
+                >
+                  Simpan Data
+                </button>
               </div>
             </form>
           </div>
@@ -399,4 +495,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-

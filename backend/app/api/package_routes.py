@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..models.package import CateringPackage
-from ..schemas.package import PackageCreate, PackageOut
+from ..models.package_model import CateringPackage
+from ..schemas.package_schema import PackageCreate, PackageOut
 
 router = APIRouter(prefix="/packages", tags=["Catering Packages"])
 

@@ -8,6 +8,9 @@ html, body, #root {
   width: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden; /* Mencegah scroll ganda */
+  overflow-x: hidden; /* Mencegah scroll ganda */
   background-color: #f8fafc;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  -webkit-font-smoothing: antialiased;
 }
+

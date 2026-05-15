@@ -1,281 +1,442 @@
-import { useState, useEffect } from "react";
-import { 
-  ShoppingBag, 
-  Plus, 
-  Minus, 
-  Check, 
-  Clock, 
-  MapPin, 
+import { useState, useEffect, useRef } from "react";
+import {
+  ChevronLeft,
   Package,
+  MapPin,
+  CreditCard,
+  ShoppingBag,
   ArrowRight,
-  History
+  Truck /* <-- Ini yang sebelumnya terlewat */,
+  Landmark,
+  Wallet,
+  Banknote,
+  ShieldCheck,
+  Star,
+  LocateFixed,
+  Plus,
+  Minus,
 } from "lucide-react";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  useMap,
+  useMapEvents,
+  ZoomControl,
+} from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { useNavigate, useLocation } from "react-router-dom";
 import api from "../services/api";
 
-const OrderFood = () => {
-  const [packages, setPackages] = useState([]);
-  const [myOrders, setMyOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("menu"); // 'menu' or 'history'
-  const [isOrdering, setIsOrdering] = useState(false);
-  
-  // Selection state
-  const [selectedPackage, setSelectedPackage] = useState(null);
-  const [quantity, setQuantity] = useState(1);
-  const [notes, setNotes] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+// Pointer (Pin) Peta Normal & Elegan
+const pinIcon = L.divIcon({
+  className: "custom-pin",
+  html: `
+    <div class="relative flex items-center justify-center -mt-6">
+      <div class="w-10 h-10 bg-blue-600 rounded-full shadow-lg border-[3px] border-white flex items-center justify-center z-10 relative">
+        <div class="w-3 h-3 bg-white rounded-full"></div>
+      </div>
+      <div class="absolute -bottom-1.5 w-4 h-4 bg-slate-900/30 rounded-full blur-[3px]"></div>
+    </div>
+  `,
+  iconSize: [40, 40],
+  iconAnchor: [20, 20],
+});
 
-  const customerId = localStorage.getItem("user_id");
+const MapController = ({ pos }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (pos) map.flyTo(pos, 16, { animate: true, duration: 1.5 });
+  }, [pos, map]);
+  return null;
+};
+
+const LocationPicker = ({ onLocationSelect }) => {
+  useMapEvents({
+    click(e) {
+      onLocationSelect(e.latlng);
+    },
+  });
+  return null;
+};
+
+const OrderFood = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [packages, setPackages] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const [mapPos, setMapPos] = useState([-7.7971, 110.3705]);
+  const [isLocating, setIsLocating] = useState(false);
+  const debounceTimeout = useRef(null);
+
+  const [formData, setFormData] = useState({
+    package_id: "",
+    quantity: 1,
+    address: "",
+    payment_method: "transfer_bank",
+    notes: "",
+  });
 
   useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        const res = await api.get("/packages/");
+        setPackages(res.data);
+        if (location.state?.packageId) {
+          setFormData((prev) => ({
+            ...prev,
+            package_id: location.state.packageId,
+          }));
+        } else if (res.data.length > 0) {
+          setFormData((prev) => ({ ...prev, package_id: res.data[0].id }));
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
     fetchPackages();
-    fetchMyOrders();
-  }, []);
+  }, [location.state]);
 
-  const fetchPackages = async () => {
-    try {
-      const response = await api.get("/packages/");
-      setPackages(response.data);
-    } catch (error) {
-      console.error("Error fetching packages:", error);
+  const getUserLocation = () => {
+    if ("geolocation" in navigator) {
+      setIsLocating(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          setMapPos([lat, lng]);
+          fetchAddressFromCoords(lat, lng);
+        },
+        (error) => {
+          alert("Gagal mendapatkan lokasi GPS.");
+          setIsLocating(false);
+        },
+      );
     }
   };
 
-  const fetchMyOrders = async () => {
+  const fetchAddressFromCoords = async (lat, lng) => {
+    setIsLocating(true);
     try {
-      const response = await api.get(`/orders/?customer_id=${customerId}`);
-      setMyOrders(response.data);
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`,
+      );
+      const data = await res.json();
+      if (data && data.display_name)
+        setFormData((prev) => ({ ...prev, address: data.display_name }));
     } catch (error) {
-      console.error("Error fetching my orders:", error);
+      console.error(error);
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
+  const handleMapClick = (latlng) => {
+    setMapPos([latlng.lat, latlng.lng]);
+    fetchAddressFromCoords(latlng.lat, latlng.lng);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Fungsi khusus untuk menambah/mengurangi quantity
+  const updateQuantity = (amount) => {
+    setFormData((prev) => ({
+      ...prev,
+      quantity: Math.max(1, prev.quantity + amount),
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    const customerId = localStorage.getItem("user_id");
+    try {
+      // Format payload diubah agar serasi dengan backend baru
+      await api.post("/orders/", {
+        customer_id: parseInt(customerId),
+        package_id: parseInt(formData.package_id),
+        quantity: formData.quantity,
+        status: "pending",
+        payment_method: formData.payment_method,
+        notes: formData.notes,
+        street: formData.address, // Mengirim teks alamat
+        lat: mapPos[0], // Mengirim koordinat Latitude dari peta
+        lng: mapPos[1], // Mengirim koordinat Longitude dari peta
+      });
+      navigate("/orders");
+    } catch (error) {
+      alert("Gagal memproses pesanan.");
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePlaceOrder = async (e) => {
-    e.preventDefault();
-    if (!selectedPackage) return;
+  const selectedPackage = packages.find(
+    (p) => p.id === parseInt(formData.package_id),
+  );
+  const subtotal = selectedPackage
+    ? selectedPackage.price * formData.quantity
+    : 0;
 
-    setIsOrdering(true);
-    try {
-      await api.post("/orders/", {
-        customer_id: Number(customerId),
-        package_id: selectedPackage.id,
-        quantity: quantity,
-        total_price: selectedPackage.price * quantity,
-        status: "pending",
-        payment_method: paymentMethod,
-        payment_status: "unpaid",
-        notes: notes
-      });
-      
-      // Success
-      setSelectedPackage(null);
-      setQuantity(1);
-      setNotes("");
-      setPaymentMethod("cash");
-      setActiveTab("history");
-      fetchMyOrders();
-      alert("Pesanan berhasil dikirim! Silakan selesaikan pembayaran.");
-    } catch (error) {
-      console.error("Error placing order:", error);
-      alert("Gagal mengirim pesanan. Silakan coba lagi.");
-    } finally {
-      setIsOrdering(false);
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
-      case 'pending': return 'bg-amber-50 text-amber-600 border-amber-100';
-      case 'dikirim': return 'bg-blue-50 text-blue-600 border-blue-100';
-      case 'selesai': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-      default: return 'bg-slate-50 text-slate-600 border-slate-100';
-    }
-  };
+  // Ongkir dihapus (set ke 0)
+  const deliveryFee = 0;
+  const totalAmount = subtotal + deliveryFee;
 
   return (
-    <div className="h-full bg-slate-50 overflow-y-auto font-sans">
-      {/* Header */}
-      <div className="bg-white border-b border-slate-100 px-8 py-6 sticky top-0 z-10">
-        <div className="flex justify-between items-center">
+    <div className="h-full w-full overflow-y-auto bg-[#f8fafc] flex flex-col font-sans selection:bg-blue-100 text-slate-700 pb-10 scroll-smooth">
+      {/* HEADER */}
+      <nav className="sticky top-0 z-[1000] bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate("/home")}
+            className="p-2.5 bg-white text-slate-600 rounded-xl shadow-sm border border-slate-200 hover:bg-slate-50 transition-all active:scale-95"
+          >
+            <ChevronLeft size={20} />
+          </button>
           <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Katering Mandiri</h1>
-            <p className="text-slate-500 text-sm font-medium">Pesan paket katering favorit Anda</p>
-          </div>
-          <div className="flex bg-slate-100 p-1 rounded-xl">
-            <button 
-              onClick={() => setActiveTab("menu")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "menu" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"}`}
-            >
-              <ShoppingBag size={16} /> Menu
-            </button>
-            <button 
-              onClick={() => setActiveTab("history")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "history" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"}`}
-            >
-              <History size={16} /> Pesanan Saya
-            </button>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight leading-none">
+              Konfirmasi Checkout
+            </h1>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+              Stich Logistics
+            </p>
           </div>
         </div>
-      </div>
+      </nav>
 
-      <div className="p-8 max-w-6xl mx-auto">
-        {activeTab === "menu" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {packages.map((pkg) => (
-              <div key={pkg.id} className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col group hover:shadow-md transition-shadow">
-                <div className="h-40 bg-slate-100 flex items-center justify-center relative overflow-hidden">
-                   <Package size={48} className="text-slate-300 group-hover:scale-110 transition-transform duration-500" />
-                   <div className="absolute top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-black">
-                     Rp {pkg.price.toLocaleString()}
-                   </div>
-                </div>
-                <div className="p-6 flex flex-col flex-1">
-                  <h3 className="text-lg font-bold text-slate-800 mb-2">{pkg.package_name}</h3>
-                  <p className="text-slate-500 text-sm mb-6 flex-1">{pkg.description || "Paket katering lezat siap santap."}</p>
-                  <button 
-                    onClick={() => { setSelectedPackage(pkg); setQuantity(1); setPaymentMethod("cash"); }}
-                    className="w-full py-3 bg-slate-50 text-blue-600 font-bold rounded-xl border border-blue-100 hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center gap-2"
-                  >
-                    Pesan Sekarang <ArrowRight size={16} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {loading ? (
-              <div className="text-center py-12 text-slate-400">Memuat pesanan...</div>
-            ) : myOrders.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-200">
-                <Clock size={48} className="mx-auto text-slate-200 mb-4" />
-                <p className="text-slate-500 font-bold">Belum ada riwayat pesanan</p>
-              </div>
-            ) : (
-              myOrders.map((order) => (
-                <div key={order.id} className="bg-white p-5 rounded-2xl border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${order.status === 'pending' ? 'bg-amber-50' : 'bg-blue-50'}`}>
-                      <Package className={order.status === 'pending' ? 'text-amber-500' : 'text-blue-500'} size={24} />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-800">{order.package?.package_name || "Paket Katering"}</h4>
-                      <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase">
-                        <span>#ORD-{order.id}</span>
-                        <span>•</span>
-                        <span>{order.payment_method}</span>
-                        <span>•</span>
-                        <span className={order.payment_status === 'paid' ? 'text-emerald-500' : 'text-rose-500'}>{order.payment_status}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-8">
-                    <div className="text-right hidden sm:block">
-                      <p className="text-xs text-slate-400 font-bold uppercase tracking-tighter">Jumlah</p>
-                      <p className="font-bold text-slate-700">{order.quantity} Box</p>
-                    </div>
-                    <div className={`px-4 py-1.5 rounded-lg border text-xs font-black uppercase tracking-widest ${getStatusColor(order.status)}`}>
-                      {order.status}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Modal Pesanan */}
-      {selectedPackage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-            <div className="p-8 pb-4 flex justify-between items-center">
-              <h3 className="text-2xl font-black text-slate-900">Konfirmasi Pesanan</h3>
-              <button onClick={() => setSelectedPackage(null)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                <Minus size={20} className="text-slate-400" />
-              </button>
-            </div>
-            
-            <div className="p-8 pt-4 space-y-5 overflow-y-auto max-h-[70vh]">
-              <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex items-center gap-4">
-                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                  <Package className="text-blue-600" size={24} />
+      <main className="flex-1 max-w-6xl mx-auto w-full p-4 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* KOLOM KIRI */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* Section Alamat & Peta */}
+          <section className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-50">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl border border-blue-100/50">
+                  <MapPin size={24} />
                 </div>
                 <div>
-                  <p className="text-xs text-blue-400 font-bold uppercase tracking-widest">Item Terpilih</p>
-                  <p className="font-bold text-blue-900">{selectedPackage.package_name}</p>
+                  <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                    Lokasi Pengiriman
+                  </h2>
+                  <p className="text-sm font-medium text-slate-500 mt-0.5">
+                    Tentukan titik presisi pengantaran.
+                  </p>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-bold text-slate-500">Jumlah Pesanan</span>
-                  <div className="flex items-center gap-4 bg-slate-100 p-1 rounded-xl">
-                    <button 
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-slate-600 hover:text-blue-600 transition-colors"
-                    >
-                      <Minus size={16} />
-                    </button>
-                    <span className="font-black text-slate-800 w-4 text-center">{quantity}</span>
-                    <button 
-                      onClick={() => setQuantity(quantity + 1)}
-                      className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-slate-600 hover:text-blue-600 transition-colors"
-                    >
-                      <Plus size={16} />
-                    </button>
-                  </div>
-                </div>
+              <button
+                type="button"
+                onClick={getUserLocation}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all shadow-md active:scale-95"
+              >
+                <LocateFixed size={16} />{" "}
+                <span className="hidden sm:block">Lokasi Saya</span>
+              </button>
+            </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Metode Pembayaran</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {['cash', 'transfer', 'qris'].map((method) => (
-                      <button
-                        key={method}
-                        onClick={() => setPaymentMethod(method)}
-                        className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter border transition-all ${paymentMethod === method ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-400 border-slate-100'}`}
-                      >
-                        {method}
-                      </button>
-                    ))}
-                  </div>
+            <div className="w-full h-72 rounded-[1.5rem] overflow-hidden border border-slate-200 mb-5 relative bg-slate-100">
+              <MapContainer
+                center={mapPos}
+                zoom={15}
+                style={{ height: "100%", width: "100%" }}
+                zoomControl={false}
+                scrollWheelZoom={false}
+              >
+                <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
+                <Marker position={mapPos} icon={pinIcon} />
+                <MapController pos={mapPos} />
+                <LocationPicker onLocationSelect={handleMapClick} />
+                <ZoomControl position="bottomright" />
+              </MapContainer>
+              {isLocating && (
+                <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-[500] flex items-center justify-center font-bold text-blue-600 text-sm gap-2">
+                  <div className="w-4 h-4 rounded-full bg-blue-600 animate-pulse"></div>{" "}
+                  Memuat Lokasi...
                 </div>
+              )}
+            </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Catatan Tambahan</label>
-                  <textarea 
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Contoh: Tanpa pedas, kirim jam 12 siang..."
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl h-20 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-sm"
-                  />
-                </div>
+            <textarea
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              placeholder="Alamat akan terisi otomatis dari peta..."
+              required
+              rows="3"
+              className="w-full px-5 py-4 bg-[#f8fafc] border border-slate-200 rounded-2xl outline-none focus:bg-white focus:ring-[3px] focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium text-slate-700 resize-none"
+            />
+          </section>
+
+          {/* Section Pembayaran */}
+          <section className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-slate-100">
+            <div className="flex items-center gap-4 mb-6 pb-4 border-b border-slate-50">
+              <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl border border-indigo-100/50">
+                <CreditCard size={24} />
               </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                  Metode Pembayaran
+                </h2>
+                <p className="text-sm font-medium text-slate-500 mt-0.5">
+                  Pilih cara bayar paling aman.
+                </p>
+              </div>
+            </div>
 
-              <div className="pt-4 border-t border-slate-100">
-                <div className="flex justify-between items-center mb-6">
-                  <span className="text-slate-400 font-medium">Total Pembayaran</span>
-                  <span className="text-xl font-black text-slate-900">Rp {(selectedPackage.price * quantity).toLocaleString()}</span>
-                </div>
-                
-                <button 
-                  onClick={handlePlaceOrder}
-                  disabled={isOrdering}
-                  className="w-full py-4 bg-blue-600 text-white font-black rounded-2xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-70 active:scale-95"
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                {
+                  id: "transfer_bank",
+                  label: "Bank Transfer",
+                  desc: "Verifikasi Manual",
+                  icon: <Landmark size={22} />,
+                },
+                {
+                  id: "e_wallet",
+                  label: "E-Wallet",
+                  desc: "Cepat & Instan",
+                  icon: <Wallet size={22} />,
+                },
+                {
+                  id: "cod",
+                  label: "Tunai (COD)",
+                  desc: "Bayar di Tempat",
+                  icon: <Banknote size={22} />,
+                },
+              ].map((method) => (
+                <div
+                  key={method.id}
+                  onClick={() =>
+                    setFormData({ ...formData, payment_method: method.id })
+                  }
+                  className={`cursor-pointer p-5 rounded-2xl transition-all duration-300 flex flex-col items-center gap-3 text-center border ${
+                    formData.payment_method === method.id
+                      ? "border-blue-500 bg-blue-50/50 shadow-[0_8px_20px_-6px_rgba(59,130,246,0.2)] ring-1 ring-blue-500"
+                      : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
+                  }`}
                 >
-                  {isOrdering ? "Memproses..." : "Konfirmasi Pembelian"}
-                  <Check size={20} />
-                </button>
+                  <div
+                    className={`p-3 rounded-xl transition-colors ${formData.payment_method === method.id ? "bg-blue-600 text-white shadow-md" : "bg-slate-100 text-slate-500"}`}
+                  >
+                    {method.icon}
+                  </div>
+                  <div>
+                    <span className="font-bold text-sm block mb-1 text-slate-900">
+                      {method.label}
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      {method.desc}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        {/* KOLOM KANAN: SUMMARY */}
+        <div className="lg:col-span-1">
+          <div className="sticky top-24 bg-white rounded-[2rem] p-6 md:p-8 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.06)] border border-slate-100">
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight mb-6 flex items-center gap-3 pb-4 border-b border-slate-50">
+              <div className="w-8 h-8 bg-slate-900 rounded-xl flex items-center justify-center text-white">
+                <ShoppingBag size={16} />
               </div>
+              Ringkasan Belanja
+            </h2>
+
+            <div className="space-y-6">
+              {/* Item Info + Quantity Selector */}
+              <div className="bg-[#f8fafc] p-5 rounded-2xl border border-slate-100">
+                <div className="flex flex-col gap-3">
+                  <h4 className="font-bold text-slate-900 leading-tight pr-4">
+                    {selectedPackage?.package_name || "Memuat..."}
+                  </h4>
+
+                  {/* QUANTITY SELECTOR (Lebih Elegan) */}
+                  <div className="flex items-center justify-between mt-2">
+                    <div className="flex items-center gap-1 text-slate-500 text-xs font-medium">
+                      <Star
+                        size={12}
+                        className="text-amber-500 fill-amber-500"
+                      />{" "}
+                      Katering Pilihan
+                    </div>
+
+                    <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(-1)}
+                        className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-500 transition-colors"
+                      >
+                        <Minus size={14} />
+                      </button>
+                      <span className="w-8 text-center font-bold text-slate-900 text-sm">
+                        {formData.quantity}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(1)}
+                        className="p-1.5 hover:bg-slate-50 rounded-lg text-blue-600 transition-colors"
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Rincian Harga */}
+              <div className="space-y-3 pt-2">
+                <div className="flex justify-between text-sm text-slate-500 font-medium">
+                  <span>Subtotal</span>
+                  <span className="text-slate-900 font-bold">
+                    Rp {subtotal.toLocaleString("id-ID")}
+                  </span>
+                </div>
+
+                {/* Section Ongkir (Dibuat Gratis) */}
+                <div className="flex justify-between text-sm text-slate-500 font-medium">
+                  <span className="flex items-center gap-1.5">
+                    <Truck size={14} className="text-blue-500" /> Pengiriman
+                  </span>
+                  <span className="text-emerald-600 font-bold">Gratis</span>
+                </div>
+
+                <div className="border-t border-dashed border-slate-200 my-4 pt-4">
+                  <div className="flex justify-between items-end">
+                    <span className="text-sm font-bold text-slate-500">
+                      Total Tagihan
+                    </span>
+                    <span className="text-2xl font-black text-slate-900">
+                      Rp {totalAmount.toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleSubmit}
+                disabled={loading || !formData.address || !formData.package_id}
+                className="w-full mt-4 py-4.5 bg-blue-600 hover:bg-blue-700 text-white text-base font-bold rounded-2xl transition-all shadow-[0_8px_20px_-6px_rgba(59,130,246,0.5)] flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed group"
+              >
+                {loading ? "Memproses..." : "Bayar Pesanan"}
+                {!loading && (
+                  <ArrowRight
+                    size={20}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                )}
+              </button>
             </div>
           </div>
         </div>
-      )}
-
+      </main>
     </div>
   );
 };

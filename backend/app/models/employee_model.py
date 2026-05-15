@@ -2,8 +2,8 @@ from sqlalchemy import Column, Integer, String, Text, DateTime
 from datetime import datetime
 from ..database import Base
 
-class User(Base):
-    __tablename__ = "users"
+class Employees(Base):
+    __tablename__ = "employees"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name = Column(String(255), nullable=False)
