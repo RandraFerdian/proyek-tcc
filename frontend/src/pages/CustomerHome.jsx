@@ -14,7 +14,6 @@ import {
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
-// --- MARKER MAP CLEAN & MINIMALIS ---
 const createStatusMarker = (status) => {
   let colorClass, glowClass, iconSvg;
   const currentStatus = status?.toLowerCase() || "pending";
@@ -62,11 +61,17 @@ const CustomerHome = () => {
     const fetchData = async () => {
       try {
         const packageRes = await api.get("/packages/");
-        setPackages(packageRes.data);
+        // PERBAIKAN: Memastikan data selalu berbentuk array, meski API return null
+        setPackages(packageRes.data || []);
+
         const orderRes = await api.get("/orders/me");
-        setOrders(orderRes.data);
+        // PERBAIKAN: Memastikan data selalu berbentuk array
+        setOrders(orderRes.data || []);
       } catch (err) {
         console.error("Gagal mengambil data:", err);
+        // Fallback aman jika terjadi error (seperti koneksi terputus)
+        setPackages([]);
+        setOrders([]);
       } finally {
         setLoading(false);
       }
@@ -74,14 +79,16 @@ const CustomerHome = () => {
     fetchData();
   }, []);
 
-const handleLogout = () => {
-  localStorage.clear(); 
-  navigate("/customer/login"); 
-};
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/customer/login");
+  };
 
-  const filteredPackages = packages.filter((pkg) =>
-    pkg.package_name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  // PERBAIKAN: Pelindung tambahan pada packages array
+  const filteredPackages = (packages || []).filter((pkg) => {
+    const packageName = pkg.name || "";
+    return packageName.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   return (
     <div className="h-screen w-full relative bg-[#f4f5f7] overflow-hidden antialiased">
@@ -95,7 +102,8 @@ const handleLogout = () => {
         >
           <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
 
-          {orders.map((order) => {
+          {/* PERBAIKAN: Gunakan tanda tanya (?) sebelum map agar tidak error jika orders null */}
+          {orders?.map((order) => {
             if (!order.lat || !order.lng) return null;
             return (
               <Marker
@@ -106,10 +114,10 @@ const handleLogout = () => {
                 <Popup className="clean-popup">
                   <div className="p-1.5 text-center">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                      ID: {order.id}
+                      ID: {order.order_code || order.id}
                     </p>
                     <p className="font-bold text-slate-800 text-sm leading-tight mb-2 px-2">
-                      {order.package?.package_name}
+                      {order.package?.name || "Paket Katering"}
                     </p>
                     <div className="inline-block px-3 py-1 bg-slate-100 rounded-full text-xs font-semibold text-slate-600 capitalize">
                       {order.status}
@@ -122,15 +130,13 @@ const handleLogout = () => {
         </MapContainer>
       </div>
 
-      {/* --- MODERN FLOATING NAVBAR (PILL SHAPE) --- */}
+      {/* --- MODERN FLOATING NAVBAR --- */}
       <nav className="fixed top-6 left-0 right-0 z-[1010] px-4 md:px-8 pointer-events-none">
         <div className="max-w-4xl mx-auto flex items-center justify-between pointer-events-auto bg-white/90 backdrop-blur-md px-3 py-3 md:px-4 md:py-3 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/80">
-          {/* Menu / App Icon */}
           <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-700 ml-1">
             <LayoutGrid size={18} />
           </div>
 
-          {/* Search Bar - Sangat Clean */}
           <div className="flex-1 px-4 relative group">
             <Search
               size={18}
@@ -145,14 +151,14 @@ const handleLogout = () => {
             />
           </div>
 
-          {/* Profile & My Orders */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate("/orders")}
               className="px-4 py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-full text-[13px] font-bold transition-colors flex items-center gap-2"
             >
               Pesanan
-              {orders.length > 0 && (
+              {/* PERBAIKAN: Pelindung untuk cek length */}
+              {orders?.length > 0 && (
                 <span className="bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px]">
                   {orders.length}
                 </span>
@@ -161,7 +167,7 @@ const handleLogout = () => {
 
             <div className="flex items-center gap-2 pl-2">
               <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                {userName.charAt(0)}
+                {userName.charAt(0).toUpperCase()}
               </div>
               <button
                 onClick={handleLogout}
@@ -174,14 +180,13 @@ const handleLogout = () => {
         </div>
       </nav>
 
-      {/* --- COLLAPSIBLE BOTTOM DRAWER (ONE UI STYLE) --- */}
+      {/* --- COLLAPSIBLE BOTTOM DRAWER --- */}
       <div
         className={`fixed inset-x-0 bottom-0 z-[1005] transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform ${
           isMenuOpen ? "h-[85vh]" : "h-[90px]"
         }`}
       >
         <div className="h-full bg-white rounded-t-[2.5rem] shadow-[0_-10px_40px_rgb(0,0,0,0.04)] flex flex-col overflow-hidden">
-          {/* Handle Bar */}
           <div
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="w-full pt-5 pb-5 px-8 flex flex-col items-center cursor-pointer hover:bg-slate-50 transition-colors"
@@ -206,7 +211,6 @@ const handleLogout = () => {
             </div>
           </div>
 
-          {/* Scrollable Content */}
           <div
             className={`flex-1 overflow-y-auto px-6 md:px-8 pb-12 transition-opacity duration-300 ${isMenuOpen ? "opacity-100" : "opacity-0"}`}
           >
@@ -218,7 +222,7 @@ const handleLogout = () => {
                       className="h-48 bg-slate-100 rounded-[2rem] animate-pulse"
                     />
                   ))
-                : filteredPackages.map((pkg) => (
+                : filteredPackages?.map((pkg) => (
                     <div
                       key={pkg.id}
                       onClick={() =>
@@ -244,7 +248,7 @@ const handleLogout = () => {
                           </div>
                         </div>
                         <h4 className="font-bold text-slate-800 text-lg leading-tight mb-2 group-hover:text-blue-600 transition-colors">
-                          {pkg.package_name}
+                          {pkg.name}
                         </h4>
                         <p className="text-slate-500 text-[13px] font-medium line-clamp-2 leading-relaxed">
                           {pkg.description ||
@@ -267,7 +271,6 @@ const handleLogout = () => {
         </div>
       </div>
 
-      {/* --- CSS KHUSUS POPUP --- */}
       <style>{`
         .clean-popup .leaflet-popup-content-wrapper {
           border-radius: 1.5rem;

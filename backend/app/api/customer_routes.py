@@ -5,12 +5,14 @@ from typing import Optional
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models.customer_model import Customer 
-from ..core.security import get_password_hash
+
+# TAMBAHKAN create_access_token PADA IMPORT INI:
+from ..core.security import get_password_hash, create_access_token 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 router = APIRouter(prefix="/auth/customer", tags=["Customer Auth"])
 
-# 1. Buat Skema Pydantic Pembaca Request dari Form Frontend
+# 1. Skema Pydantic Pembaca Request dari Form Frontend
 class CustomerRegisterRequest(BaseModel):
     name: str
     company: Optional[str] = None 
@@ -27,7 +29,9 @@ def register_customer(payload: CustomerRegisterRequest, db: Session = Depends(ge
     existing_customer = db.query(Customer).filter(Customer.email == payload.email).first()
     if existing_customer:
         raise HTTPException(status_code=400, detail="Email sudah terdaftar!")
+    
     hashed_password = get_password_hash(payload.password) 
+    
     new_customer = Customer(
         name=payload.name,
         company=payload.company,
@@ -56,12 +60,14 @@ def login_customer(payload: CustomerLoginRequest, db: Session = Depends(get_db))
     if not pwd_context.verify(payload.password, customer.hashed_password):
         raise HTTPException(status_code=400, detail="Email atau password salah!")
 
-    # C. Kembalikan response payload data yang sesuai dengan kebutuhan CustomerLogin.jsx
-    # (Jika kamu sudah setup sistem JWT token asli, silakan ganti string token ini dengan generator JWT kamu)
+    # C. BUAT TOKEN JWT ASLI! (Menyisipkan email customer ke dalam payload token)
+    # Ini akan sempurna dibaca oleh get_current_customer di security.py
+    access_token = create_access_token(data={"sub": customer.email})
+
     return {
-    "access_token": f"session-token-customer-{customer.id}",
-    "token": f"session-token-customer-{customer.id}",
-    "role": "user", # Pastikan ini 'user' sesuai allowedRoles di App.jsx
-    "user_id": customer.id,
-    "name": customer.name
+        "access_token": access_token,
+        "token": access_token,
+        "role": "user", 
+        "user_id": customer.id,
+        "name": customer.name
     }
