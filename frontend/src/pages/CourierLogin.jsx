@@ -1,20 +1,20 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
-  Mail,
-  Lock,
-  ArrowRight,
   ArrowLeft,
-  Truck,
+  ArrowRight,
+  LockKeyhole,
+  Phone,
   ShieldCheck,
+  Truck,
 } from "lucide-react";
+import api from "../services/api";
 
 const CourierLogin = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [vehiclePlate, setVehiclePlate] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -22,100 +22,93 @@ const CourierLogin = () => {
     setLoading(true);
     setError("");
 
-    // Backend belum mendukung auth untuk kurir secara spesifik di tabel kurir
-    // Untuk demonstrasi UI, kita beri notifikasi atau gunakan admin login logic jika diperlukan
-    setError("Fitur login kurir akan segera hadir. Gunakan portal admin sementara.");
-    setLoading(false);
+    try {
+      const response = await api.post("/couriers/login", {
+        phone,
+        vehicle_plate: vehiclePlate,
+      });
+
+      localStorage.setItem("token", response.data.access_token);
+      localStorage.setItem("user_role", "courier");
+      localStorage.setItem("user_id", response.data.courier_id);
+      localStorage.setItem("courier_id", response.data.courier_id);
+      localStorage.setItem("courier_name", response.data.name);
+      navigate("/courier");
+    } catch (err) {
+      setError(err.response?.data?.detail || "Login kurir gagal. Cek nomor HP dan plat kendaraan.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 relative overflow-hidden font-sans">
-      {/* Subtle background accents */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-32 -right-32 w-[400px] h-[400px] bg-violet-100/30 rounded-full blur-[100px]" />
-        <div className="absolute -bottom-32 -left-32 w-[300px] h-[300px] bg-indigo-100/30 rounded-full blur-[100px]" />
+    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-slate-50 font-sans">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -right-32 -top-32 h-[400px] w-[400px] rounded-full bg-violet-100/30 blur-[100px]" />
+        <div className="absolute -bottom-32 -left-32 h-[300px] w-[300px] rounded-full bg-blue-100/30 blur-[100px]" />
       </div>
 
-      {/* Back Button */}
       <Link
         to="/"
-        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-slate-400 hover:text-slate-700 transition-colors font-semibold text-sm group"
+        className="group absolute left-6 top-6 z-20 flex items-center gap-2 text-sm font-semibold text-slate-400 transition-colors hover:text-slate-700"
       >
-        <ArrowLeft
-          size={18}
-          className="group-hover:-translate-x-1 transition-transform"
-        />
+        <ArrowLeft size={18} className="transition-transform group-hover:-translate-x-1" />
         <span>Beranda</span>
       </Link>
 
-      {/* Login Card */}
-      <div className="relative z-10 max-w-md w-full mx-4">
-        <div className="bg-white rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
-          {/* Header */}
-          <div className="pt-12 pb-6 px-8 text-center bg-gradient-to-b from-violet-50/60 to-transparent">
-            <div className="w-16 h-16 bg-violet-50 ring-1 ring-violet-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+      <div className="relative z-10 mx-4 w-full max-w-md">
+        <div className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="bg-gradient-to-b from-violet-50/70 to-transparent px-8 pb-6 pt-12 text-center">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-50 ring-1 ring-violet-100">
               <Truck size={32} className="text-violet-600" />
             </div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-              Kurir Portal
-            </h1>
-            <p className="text-slate-500 mt-1.5 font-medium">
-              Masuk untuk melihat rute pengiriman
-            </p>
-
-            {/* Courier Badge */}
-            <div className="inline-flex items-center gap-1.5 mt-4 px-4 py-1.5 bg-violet-50 border border-violet-100 rounded-full">
-              <div className="w-2 h-2 rounded-full bg-violet-500 animate-pulse" />
-              <span className="text-[10px] font-bold text-violet-600 uppercase tracking-widest">
-                Courier Portal
+            <h1 className="text-3xl font-black tracking-tight text-slate-900">Kurir Portal</h1>
+            <p className="mt-1.5 font-medium text-slate-500">Masuk untuk mengambil dan mengantar pesanan</p>
+            <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-violet-100 bg-violet-50 px-4 py-1.5">
+              <div className="h-2 w-2 animate-pulse rounded-full bg-violet-500" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-violet-600">
+                Courier Live Tracking
               </span>
             </div>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="px-8 pb-10 space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 px-8 pb-10">
             {error && (
-              <div className="p-3 border text-xs font-bold rounded-xl bg-rose-50 border-rose-100 text-rose-600">
+              <div className="rounded-xl border border-rose-100 bg-rose-50 p-3 text-xs font-bold text-rose-600">
                 {error}
               </div>
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
-                ID Kurir / Email
+              <label className="ml-1 text-xs font-bold uppercase tracking-widest text-slate-400">
+                Nomor HP
               </label>
-              <div className="relative group">
-                <Mail
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-500 transition-colors"
-                />
+              <div className="group relative">
+                <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-violet-500" />
                 <input
-                  type="email"
+                  type="text"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="kurir@katering-stich.com"
-                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-violet-500/10 focus:border-violet-400 outline-none transition-all placeholder:text-slate-400 text-slate-700"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="08123456789"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3.5 pl-12 pr-4 text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-violet-400 focus:ring-4 focus:ring-violet-500/10"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
-                Password
+              <label className="ml-1 text-xs font-bold uppercase tracking-widest text-slate-400">
+                Plat Kendaraan
               </label>
-              <div className="relative group">
-                <Lock
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-500 transition-colors"
-                />
+              <div className="group relative">
+                <LockKeyhole size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-violet-500" />
                 <input
-                  type="password"
+                  type="text"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-violet-500/10 focus:border-violet-400 outline-none transition-all placeholder:text-slate-400 text-slate-700"
+                  value={vehiclePlate}
+                  onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())}
+                  placeholder="AB 1234 CD"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3.5 pl-12 pr-4 uppercase text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-violet-400 focus:ring-4 focus:ring-violet-500/10"
                 />
               </div>
             </div>
@@ -123,35 +116,22 @@ const CourierLogin = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-violet-600 text-white font-black rounded-2xl shadow-lg shadow-violet-600/20 hover:bg-violet-700 transition-all flex items-center justify-center gap-2 group active:scale-[0.98] disabled:opacity-70"
+              className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 py-4 font-black text-white shadow-lg shadow-violet-600/20 transition-all hover:bg-violet-700 active:scale-[0.98] disabled:opacity-70"
             >
-              {loading ? "Menghubungkan..." : "Masuk ke Sistem"}
-              {!loading && (
-                <ArrowRight
-                  size={20}
-                  className="group-hover:translate-x-1 transition-transform"
-                />
-              )}
+              {loading ? "Menghubungkan..." : "Masuk ke Tugas Kurir"}
+              {!loading && <ArrowRight size={20} className="transition-transform group-hover:translate-x-1" />}
             </button>
           </form>
         </div>
 
-        {/* Security Note */}
         <div className="mt-5 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-100 rounded-full shadow-sm">
+          <div className="inline-flex items-center gap-2 rounded-full border border-slate-100 bg-white px-4 py-2 shadow-sm">
             <ShieldCheck size={14} className="text-slate-400" />
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-              Gunakan perangkat yang terdaftar
+            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              Gunakan data kurir dari admin
             </span>
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="absolute bottom-6 text-center">
-        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">
-          © 2026 Katering Stich • Monitoring System v1.0
-        </p>
       </div>
     </div>
   );

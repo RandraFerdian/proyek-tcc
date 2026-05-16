@@ -27,7 +27,7 @@ const AdminLogin = () => {
 
     try {
       if (isRegister) {
-        await api.post("/users/", { name, email, password });
+        await api.post("/employees/", { name, email, password, role: "admin" });
         setIsRegister(false);
         setError("Registrasi berhasil! Silakan login.");
         setLoading(false);
@@ -46,7 +46,7 @@ const AdminLogin = () => {
         localStorage.setItem("token", response.data.access_token);
         localStorage.setItem("user_role", response.data.role);
         localStorage.setItem("user_id", response.data.user_id);
-        navigate("/dashboard");
+        navigate("/admin");
       }
     } catch (err) {
       console.error("Auth error:", err);

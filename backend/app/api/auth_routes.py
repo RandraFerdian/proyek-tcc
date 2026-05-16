@@ -19,15 +19,11 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), role_hint: str = "us
         user = db.query(Employees).filter(Employees.email == form_data.username).first()
     else:
         user = db.query(Customer).filter(Customer.email == form_data.username).first()
-    if not user:
-        if role_hint == "admin":
-            user = db.query(Customer).filter(Customer.email == form_data.username).first()
-            role = "user"
-        else:
-            user = db.query(Employees).filter(Employees.email == form_data.username).first()
-            role = "admin"
+
     if not user:
         raise HTTPException(status_code=400, detail="Email tidak terdaftar")
+    if not user.hashed_password:
+        raise HTTPException(status_code=400, detail="Akun belum memiliki password")
     if not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Password salah")
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)

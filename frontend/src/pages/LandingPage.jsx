@@ -5,7 +5,6 @@ import {
   Clock,
   ArrowRight,
   ShieldCheck,
-  Phone,
   Star,
 } from "lucide-react";
 

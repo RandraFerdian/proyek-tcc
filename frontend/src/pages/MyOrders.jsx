@@ -6,11 +6,8 @@ import {
   ArrowRight,
   ShoppingBag,
   MapPin,
-  FileText,
-  CreditCard,
   X,
   Calendar,
-  DollarSign,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
@@ -58,7 +55,7 @@ const MyOrders = () => {
       // Abaikan jika data order kosong atau rusak
       if (!order) return acc;
 
-      const code = order.order_code || `ORD-${order.id || Math.random()}`;
+      const code = order.order_code || `ORD-${order.id || "UNKNOWN"}`;
 
       if (!acc[code]) {
         acc[code] = {
@@ -116,18 +113,6 @@ const MyOrders = () => {
           label: status || "Diproses",
           icon: <Package size={12} />,
         };
-    }
-  };
-
-  const getPaymentStatusConfig = (status) => {
-    switch (status?.toLowerCase()) {
-      case "paid":
-      case "lunas":
-        return "text-emerald-600 bg-emerald-50 border-emerald-100";
-      case "pending":
-        return "text-amber-600 bg-amber-50 border-amber-100";
-      default:
-        return "text-rose-600 bg-rose-50 border-rose-100";
     }
   };
 

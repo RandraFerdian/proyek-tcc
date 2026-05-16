@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+import { KITCHEN_LOCATION } from "../constants/locations";
 
 const createStatusMarker = (status) => {
   let colorClass, glowClass, iconSvg;
@@ -104,11 +105,22 @@ const CustomerHome = () => {
 
           {/* PERBAIKAN: Gunakan tanda tanya (?) sebelum map agar tidak error jika orders null */}
           {orders?.map((order) => {
-            if (!order.lat || !order.lng) return null;
+            const isDelivering = ["dikirim", "in transit"].includes((order.status || "").toLowerCase());
+            const markerLat = isDelivering && order.courier_location?.lat
+              ? order.courier_location.lat
+              : isDelivering
+                ? KITCHEN_LOCATION.lat
+                : order.lat;
+            const markerLng = isDelivering && order.courier_location?.lng
+              ? order.courier_location.lng
+              : isDelivering
+                ? KITCHEN_LOCATION.lng
+                : order.lng;
+            if (!markerLat || !markerLng) return null;
             return (
               <Marker
                 key={order.id}
-                position={[parseFloat(order.lat), parseFloat(order.lng)]}
+                position={[parseFloat(markerLat), parseFloat(markerLng)]}
                 icon={createStatusMarker(order.status)}
               >
                 <Popup className="clean-popup">
@@ -117,7 +129,7 @@ const CustomerHome = () => {
                       ID: {order.order_code || order.id}
                     </p>
                     <p className="font-bold text-slate-800 text-sm leading-tight mb-2 px-2">
-                      {order.package?.name || "Paket Katering"}
+                      {order.package?.package_name || order.package?.name || "Paket Katering"}
                     </p>
                     <div className="inline-block px-3 py-1 bg-slate-100 rounded-full text-xs font-semibold text-slate-600 capitalize">
                       {order.status}

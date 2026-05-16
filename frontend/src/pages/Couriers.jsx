@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, Plus, Edit2, Trash2, X } from "lucide-react";
+import { Plus, Edit2, Trash2, X } from "lucide-react";
 import api from "../services/api";
 
 const Couriers = () => {
@@ -13,10 +13,6 @@ const Couriers = () => {
   });
   const [editingId, setEditingId] = useState(null);
 
-  useEffect(() => {
-    fetchCouriers();
-  }, []);
-
   const fetchCouriers = async () => {
     try {
       const response = await api.get("/couriers/");
@@ -25,6 +21,11 @@ const Couriers = () => {
       console.error("Error fetching couriers:", error);
     }
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchCouriers();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -74,7 +75,7 @@ const Couriers = () => {
   };
 
   return (
-    <div className="p-8 h-full overflow-y-auto bg-slate-50">
+    <div className="h-full overflow-y-auto bg-slate-50 p-8 pb-32">
       <div className="flex justify-between items-end mb-8">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
@@ -254,4 +255,3 @@ const Couriers = () => {
 };
 
 export default Couriers;
-

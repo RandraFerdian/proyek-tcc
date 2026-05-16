@@ -10,7 +10,6 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import {
-  MapPin,
   Clock,
   CreditCard,
   ChevronLeft,
@@ -37,6 +36,16 @@ const RecenterMap = ({ lat, lng }) => {
     map.setView([lat, lng], 16);
   }, [lat, lng, map]);
   return null;
+};
+
+const LocationPicker = ({ lat, lng, onPick }) => {
+  useMapEvents({
+    click: (e) => {
+      const { lat: nextLat, lng: nextLng } = e.latlng;
+      onPick(nextLat, nextLng);
+    },
+  });
+  return <Marker position={[lat, lng]} icon={pinIcon} />;
 };
 
 const OrderFood = () => {
@@ -139,16 +148,6 @@ const OrderFood = () => {
     }
   };
 
-  const LocationPicker = () => {
-    useMapEvents({
-      click: (e) => {
-        const { lat, lng } = e.latlng;
-        fetchAddressFromCoords(lat, lng);
-      },
-    });
-    return <Marker position={[formData.lat, formData.lng]} icon={pinIcon} />;
-  };
-
   const handleLocateMe = () => {
     if (!navigator.geolocation) {
       alert("Fitur geolokasi tidak didukung oleh browser Anda.");
@@ -159,7 +158,7 @@ const OrderFood = () => {
         const { latitude, longitude } = position.coords;
         fetchAddressFromCoords(latitude, longitude);
       },
-      (error) => {
+      () => {
         alert("Gagal mendapatkan lokasi saat ini. Pastikan izin GPS aktif.");
       },
     );
@@ -364,7 +363,11 @@ const OrderFood = () => {
               className="h-full w-full"
             >
               <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
-              <LocationPicker />
+              <LocationPicker
+                lat={formData.lat}
+                lng={formData.lng}
+                onPick={fetchAddressFromCoords}
+              />
               <RecenterMap lat={formData.lat} lng={formData.lng} />
             </MapContainer>
           </div>

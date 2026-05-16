@@ -12,6 +12,7 @@ import CustomerLogin from "./pages/CustomerLogin";
 import CustomerRegister from "./pages/CustomerRegister";
 import AdminLogin from "./pages/AdminLogin";
 import CourierLogin from "./pages/CourierLogin";
+import CourierDashboard from "./pages/CourierDashboard";
 
 // Customer (User)
 import CustomerHome from "./pages/CustomerHome";
@@ -24,6 +25,7 @@ import Dashboard from "./pages/Dashboard";
 import Couriers from "./pages/Couriers";
 import Packages from "./pages/Packages";
 import TrackingMap from "./pages/TrackingMap";
+import AdminBottomNav from "./components/AdminBottomNav";
 
 // ==========================================
 // SISTEM KEAMANAN (PENJAGA GERBANG)
@@ -49,6 +51,15 @@ const ProtectedRoute = ({ children, allowedRoles, loginPath }) => {
 
   // 3. Jika aman, persilakan masuk
   return children;
+};
+
+const AdminLayout = ({ children }) => {
+  return (
+    <div className="relative h-screen min-h-screen overflow-hidden bg-slate-50">
+      <main className="h-full min-w-0 overflow-hidden">{children}</main>
+      <AdminBottomNav />
+    </div>
+  );
 };
 
 // ==========================================
@@ -107,7 +118,9 @@ const App = () => {
           path="/admin"
           element={
             <ProtectedRoute allowedRoles={["admin"]} loginPath="/admin/login">
-              <Dashboard />
+              <AdminLayout>
+                <Dashboard />
+              </AdminLayout>
             </ProtectedRoute>
           }
         />
@@ -115,7 +128,9 @@ const App = () => {
           path="/admin/couriers"
           element={
             <ProtectedRoute allowedRoles={["admin"]} loginPath="/admin/login">
-              <Couriers />
+              <AdminLayout>
+                <Couriers />
+              </AdminLayout>
             </ProtectedRoute>
           }
         />
@@ -123,7 +138,9 @@ const App = () => {
           path="/admin/packages"
           element={
             <ProtectedRoute allowedRoles={["admin"]} loginPath="/admin/login">
-              <Packages />
+              <AdminLayout>
+                <Packages />
+              </AdminLayout>
             </ProtectedRoute>
           }
         />
@@ -131,7 +148,9 @@ const App = () => {
           path="/admin/tracking"
           element={
             <ProtectedRoute allowedRoles={["admin"]} loginPath="/admin/login">
-              <TrackingMap />
+              <AdminLayout>
+                <TrackingMap />
+              </AdminLayout>
             </ProtectedRoute>
           }
         />
@@ -141,9 +160,7 @@ const App = () => {
           path="/courier"
           element={
             <ProtectedRoute allowedRoles={["courier"]} loginPath="/courier/login">
-              <div className="p-10 text-center font-bold text-2xl font-['Plus_Jakarta_Sans']">
-                Selamat Datang, Kurir!
-              </div>
+              <CourierDashboard />
             </ProtectedRoute>
           }
         />

@@ -12,10 +12,6 @@ const Packages = () => {
   });
   const [editingId, setEditingId] = useState(null);
 
-  useEffect(() => {
-    fetchPackages();
-  }, []);
-
   const fetchPackages = async () => {
     try {
       const response = await api.get("/packages/");
@@ -24,6 +20,11 @@ const Packages = () => {
       console.error("Error fetching packages:", error);
     }
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchPackages();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -69,7 +70,7 @@ const Packages = () => {
   };
 
   return (
-    <div className="p-8 h-full overflow-y-auto bg-slate-50">
+    <div className="h-full overflow-y-auto bg-slate-50 p-8 pb-32">
       <div className="flex justify-between items-end mb-8">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
