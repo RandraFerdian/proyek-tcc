@@ -74,10 +74,10 @@ const CustomerHome = () => {
     fetchData();
   }, []);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate("/login");
-  };
+const handleLogout = () => {
+  localStorage.clear(); 
+  navigate("/customer/login"); 
+};
 
   const filteredPackages = packages.filter((pkg) =>
     pkg.package_name.toLowerCase().includes(searchQuery.toLowerCase()),

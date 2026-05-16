@@ -6,7 +6,7 @@ from .database import engine, Base
 
 
 # Import semua router
-from .api import package_routes, order_routes, courier_routes, route_routes, customer_routes
+from .api import package_routes, order_routes, courier_routes, route_routes, customer_routes,address_routes
 # Import Firebase service
 from .services.firebase_service import init_firebase
 
@@ -39,6 +39,7 @@ app.include_router(courier_routes.router, prefix="/api/v1")
 app.include_router(route_routes.router, prefix="/api/v1")
 app.include_router(auth_routes.router, prefix="/api/v1")
 app.include_router(customer_routes.router, prefix="/api/v1")
+app.include_router(address_routes.router, prefix="/api/v1")
 
 
 

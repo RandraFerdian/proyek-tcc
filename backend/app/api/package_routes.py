@@ -42,3 +42,10 @@ def delete_package(package_id: int, db: Session = Depends(get_db)):
     db.delete(package)
     db.commit()
     return {"message": "Paket berhasil dihapus"}
+
+@router.get("/{package_id}", response_model=PackageOut)
+def get_package_by_id(package_id: int, db: Session = Depends(get_db)):
+    package = db.query(CateringPackage).filter(CateringPackage.id == package_id).first()
+    if not package:
+        raise HTTPException(status_code=404, detail="Paket tidak ditemukan")
+    return package

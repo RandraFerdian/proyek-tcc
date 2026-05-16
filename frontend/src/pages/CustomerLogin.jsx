@@ -16,36 +16,26 @@ const CustomerLogin = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    try {
-      const response = await api.post("/auth/customer/login", formData);
-      
-      // Memastikan token atau access_token dari FastAPI berhasil dibaca
-      if (response.data && (response.data.token || response.data.access_token)) {
-        
-        // 1. Simpan token utama untuk penjaga gerbang
-        localStorage.setItem("token", response.data.token || response.data.access_token);
-        
-        // 2. Simpan role 'user' agar lolos pengecekan ProtectedRoute
-        localStorage.setItem("user_role", response.data.role || "user");
-        
-        // 3. Simpan data profil customer
-        localStorage.setItem("user_id", response.data.user_id);
-        localStorage.setItem("user_name", response.data.name || "Pelanggan");
-
-        // 4. Pindah ke halaman utama katering
-        navigate("/customer/home");
-      }
-    } catch (err) {
-      setError(err.response?.data?.detail || "Email atau password salah.");
-    } finally {
-      setLoading(false);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setError("");
+  try {
+    const response = await api.post("/auth/customer/login", formData);
+    if (response.data && (response.data.token || response.data.access_token)) {
+      localStorage.clear(); // Bersihkan dulu
+      localStorage.setItem("token", response.data.token || response.data.access_token);
+      localStorage.setItem("user_role", response.data.role || "user");
+      localStorage.setItem("user_id", response.data.user_id);
+      localStorage.setItem("user_name", response.data.name || "Pelanggan");
+      navigate("/customer/home");
     }
-  };
+  } catch (err) {
+    setError(err.response?.data?.detail || "Email atau password salah.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-[#F4F7FB] p-4 font-['Plus_Jakarta_Sans']">

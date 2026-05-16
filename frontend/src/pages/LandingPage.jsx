@@ -30,7 +30,7 @@ const LandingPage = () => {
 
           <div className="flex items-center gap-3">
             <Link
-              to="/login"
+              to="/customer/login"
               className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-blue-600 rounded-xl hover:bg-blue-50 transition-colors"
             >
               Lacak Pesanan
@@ -77,7 +77,7 @@ const LandingPage = () => {
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mb-24 w-full sm:w-auto">
             <Link
-              to="/login"
+              to="/customer/login"
               className="w-full sm:w-auto px-10 py-4.5 bg-blue-600 text-white text-lg font-bold rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2.5 group active:scale-95 hover:-translate-y-0.5"
             >
               Lacak Pesanan Saya
@@ -259,9 +259,6 @@ const LandingPage = () => {
             © {new Date().getFullYear()} Stich Logistics. Mengirim kehangatan,
             tepat waktu.
           </p>
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
-            Solusi oleh randra
-          </div>
         </div>
       </footer>
     </div>

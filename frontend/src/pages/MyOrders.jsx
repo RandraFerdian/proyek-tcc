@@ -2,12 +2,9 @@ import { useState, useEffect } from "react";
 import {
   Package,
   ChevronLeft,
-  MapPin,
   Clock,
   ArrowRight,
-  CreditCard,
   ShoppingBag,
-  Search,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
@@ -21,7 +18,7 @@ const MyOrders = () => {
     const fetchMyOrders = async () => {
       try {
         setLoading(true);
-        // Mengambil pesanan khusus milik user yang login
+        // Otomatis menempelkan token dari localStorage berkat interceptor api.js
         const response = await api.get("/orders/me");
         setOrders(response.data);
       } catch (error) {
@@ -56,18 +53,18 @@ const MyOrders = () => {
       default:
         return {
           color: "text-slate-500 bg-slate-50 border-slate-100",
-          label: status,
+          label: status || "Diproses",
           icon: <Package size={12} />,
         };
     }
   };
 
   return (
-    <div className="h-screen w-full bg-slate-50 flex flex-col font-sans overflow-hidden">
-      {/* --- HEADER (Premium Glassmorphism) --- */}
+    <div className="h-screen w-full bg-slate-50 flex flex-col font-['Plus_Jakarta_Sans'] overflow-hidden">
+      {/* HEADER */}
       <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-slate-100 px-6 py-5 flex items-center gap-4">
         <button
-          onClick={() => navigate("/home")}
+          onClick={() => navigate("/customer/home")}
           className="p-3 bg-white text-slate-600 rounded-2xl shadow-sm border border-slate-200 hover:bg-slate-50 transition-all active:scale-95"
         >
           <ChevronLeft size={20} />
@@ -82,7 +79,7 @@ const MyOrders = () => {
         </div>
       </nav>
 
-      {/* --- CONTENT SECTION --- */}
+      {/* CONTENT SECTION */}
       <main className="flex-1 overflow-y-auto px-6 py-8">
         <div className="max-w-3xl mx-auto space-y-6">
           {loading ? (
@@ -94,7 +91,7 @@ const MyOrders = () => {
               />
             ))
           ) : orders.length === 0 ? (
-            /* Empty State yang Estetik */
+            /* Empty State */
             <div className="py-20 text-center flex flex-col items-center">
               <div className="w-24 h-24 bg-blue-50 rounded-[2.5rem] flex items-center justify-center text-blue-200 mb-6 border border-blue-100">
                 <ShoppingBag size={48} />
@@ -103,10 +100,10 @@ const MyOrders = () => {
                 Belum ada pesanan
               </h2>
               <p className="text-slate-500 font-medium max-w-xs mx-auto mb-8">
-                Sepertinya kamu belum memesan katering apapun hari ini.
+                Sepertinya kamu belum memesan katering apapun.
               </p>
               <button
-                onClick={() => navigate("/home")}
+                onClick={() => navigate("/customer/home")}
                 className="px-8 py-3.5 bg-blue-600 text-white font-bold rounded-2xl shadow-xl shadow-blue-600/20 hover:bg-blue-700 transition-all active:scale-95"
               >
                 Mulai Pesan Sekarang
@@ -144,20 +141,27 @@ const MyOrders = () => {
 
                   <div className="flex gap-5">
                     <div className="flex-1">
+                      {/* PERBAIKAN: Menggunakan .name bukan .package_name */}
                       <h3 className="text-lg font-black text-slate-950 mb-1 group-hover:text-blue-600 transition-colors">
-                        {order.package?.package_name || "Paket Katering"}
+                        {order.package?.name || "Paket Custom Gabungan"}
                       </h3>
                       <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
                         <span className="flex items-center gap-1.5">
                           <ShoppingBag size={14} className="text-slate-300" />{" "}
-                          {order.quantity} Box
+                          {order.quantity || 1} Porsi
                         </span>
                         <span className="flex items-center gap-1.5">
                           <Clock size={14} className="text-slate-300" />{" "}
-                          {new Date(order.created_at).toLocaleDateString(
-                            "id-ID",
-                            { day: "numeric", month: "short" },
-                          )}
+                          {order.created_at
+                            ? new Date(order.created_at).toLocaleDateString(
+                                "id-ID",
+                                {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                },
+                              )
+                            : "Hari ini"}
                         </span>
                       </div>
                     </div>
@@ -171,7 +175,7 @@ const MyOrders = () => {
                     </div>
                   </div>
 
-                  {/* Tombol Tracking Mungil jika sedang dikirim */}
+                  {/* Tombol Tracking jika sedang dikirim */}
                   {order.status?.toLowerCase() === "dikirim" && (
                     <button
                       onClick={() => navigate(`/tracking/${order.id}`)}
@@ -190,8 +194,6 @@ const MyOrders = () => {
           )}
         </div>
       </main>
-
-      {/* Bottom Padding for Mobile */}
       <div className="h-10"></div>
     </div>
   );

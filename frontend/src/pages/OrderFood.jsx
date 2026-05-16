@@ -1,442 +1,501 @@
-import { useState, useEffect, useRef } from "react";
-import {
-  ChevronLeft,
-  Package,
-  MapPin,
-  CreditCard,
-  ShoppingBag,
-  ArrowRight,
-  Truck /* <-- Ini yang sebelumnya terlewat */,
-  Landmark,
-  Wallet,
-  Banknote,
-  ShieldCheck,
-  Star,
-  LocateFixed,
-  Plus,
-  Minus,
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   MapContainer,
   TileLayer,
   Marker,
-  useMap,
   useMapEvents,
-  ZoomControl,
+  useMap,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useNavigate, useLocation } from "react-router-dom";
+import {
+  MapPin,
+  Clock,
+  CreditCard,
+  ChevronLeft,
+  ShoppingBag,
+  Plus,
+  Minus,
+  StickyNote,
+  Navigation,
+  Building,
+  Locate,
+  Utensils,
+} from "lucide-react";
 import api from "../services/api";
 
-// Pointer (Pin) Peta Normal & Elegan
-const pinIcon = L.divIcon({
-  className: "custom-pin",
-  html: `
-    <div class="relative flex items-center justify-center -mt-6">
-      <div class="w-10 h-10 bg-blue-600 rounded-full shadow-lg border-[3px] border-white flex items-center justify-center z-10 relative">
-        <div class="w-3 h-3 bg-white rounded-full"></div>
-      </div>
-      <div class="absolute -bottom-1.5 w-4 h-4 bg-slate-900/30 rounded-full blur-[3px]"></div>
-    </div>
-  `,
-  iconSize: [40, 40],
-  iconAnchor: [20, 20],
+const pinIcon = new L.Icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/2776/2776067.png",
+  iconSize: [38, 38],
+  iconAnchor: [19, 38],
 });
 
-const MapController = ({ pos }) => {
+const RecenterMap = ({ lat, lng }) => {
   const map = useMap();
   useEffect(() => {
-    if (pos) map.flyTo(pos, 16, { animate: true, duration: 1.5 });
-  }, [pos, map]);
-  return null;
-};
-
-const LocationPicker = ({ onLocationSelect }) => {
-  useMapEvents({
-    click(e) {
-      onLocationSelect(e.latlng);
-    },
-  });
+    map.setView([lat, lng], 16);
+  }, [lat, lng, map]);
   return null;
 };
 
 const OrderFood = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-  const [packages, setPackages] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const initialPackageId = location.state?.packageId;
 
-  const [mapPos, setMapPos] = useState([-7.7971, 110.3705]);
-  const [isLocating, setIsLocating] = useState(false);
-  const debounceTimeout = useRef(null);
+  // --- STATE DATA ---
+  const [allPackages, setAllPackages] = useState([]); // Menyimpan semua pilihan menu katering
+  const [cart, setCart] = useState([]); // Menyimpan daftar menu katering yang dibeli
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
+  // State Form Alamat, Pengiriman & Pembayaran
   const [formData, setFormData] = useState({
-    package_id: "",
-    quantity: 1,
-    address: "",
-    payment_method: "transfer_bank",
+    address_label: "Rumah",
+    street: "",
+    city: "",
+    lat: -7.7971,
+    lng: 110.3705,
+    scheduled_time: "",
+    payment_method: "cash",
     notes: "",
   });
 
+  // --- AMBIL DATA SEMUA MENU DARI API ---
   useEffect(() => {
-    const fetchPackages = async () => {
+    const fetchData = async () => {
       try {
         const res = await api.get("/packages/");
-        setPackages(res.data);
-        if (location.state?.packageId) {
-          setFormData((prev) => ({
-            ...prev,
-            package_id: location.state.packageId,
-          }));
-        } else if (res.data.length > 0) {
-          setFormData((prev) => ({ ...prev, package_id: res.data[0].id }));
+        setAllPackages(res.data);
+
+        // Jika user masuk membawa satu menu utama dari halaman home
+        if (initialPackageId) {
+          const primaryItem = res.data.find(
+            (item) => item.id === initialPackageId,
+          );
+          if (primaryItem) {
+            setCart([{ ...primaryItem, quantity: 1 }]);
+          }
         }
-      } catch (error) {
-        console.error(error);
+      } catch (err) {
+        console.error("Gagal mengambil daftar paket katering:", err);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchPackages();
-  }, [location.state]);
+    fetchData();
+  }, [initialPackageId]);
 
-  const getUserLocation = () => {
-    if ("geolocation" in navigator) {
-      setIsLocating(true);
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          setMapPos([lat, lng]);
-          fetchAddressFromCoords(lat, lng);
-        },
-        (error) => {
-          alert("Gagal mendapatkan lokasi GPS.");
-          setIsLocating(false);
-        },
-      );
-    }
+  // --- MANAJEMEN KERANJANG (CART OPERATIONS) ---
+  const handleAddMenuToCart = (menu) => {
+    setCart((prevCart) => {
+      const existing = prevCart.find((item) => item.id === menu.id);
+      if (existing) {
+        return prevCart.map((item) =>
+          item.id === menu.id ? { ...item, quantity: item.quantity + 1 } : item,
+        );
+      }
+      return [...prevCart, { ...menu, quantity: 1 }];
+    });
   };
 
+  const handleUpdateQuantity = (id, amount) => {
+    setCart((prevCart) =>
+      prevCart
+        .map((item) => {
+          if (item.id === id) {
+            const nextQty = item.quantity + amount;
+            return nextQty > 0 ? { ...item, quantity: nextQty } : null;
+          }
+          return item;
+        })
+        .filter(Boolean),
+    );
+  };
+
+  // Hitung akumulasi total harga belanjaan
+  const calculateTotalPrice = () => {
+    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  };
+
+  // --- GEOLOCATION & GEOPICKER LOGIC ---
   const fetchAddressFromCoords = async (lat, lng) => {
-    setIsLocating(true);
     try {
       const res = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`,
       );
       const data = await res.json();
-      if (data && data.display_name)
-        setFormData((prev) => ({ ...prev, address: data.display_name }));
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLocating(false);
+      setFormData((prev) => ({
+        ...prev,
+        lat,
+        lng,
+        street: data.display_name || "",
+        city:
+          data.address.city || data.address.town || data.address.county || "",
+      }));
+    } catch (err) {
+      console.error("Geocoding gagal:", err);
     }
   };
 
-  const handleMapClick = (latlng) => {
-    setMapPos([latlng.lat, latlng.lng]);
-    fetchAddressFromCoords(latlng.lat, latlng.lng);
+  const LocationPicker = () => {
+    useMapEvents({
+      click: (e) => {
+        const { lat, lng } = e.latlng;
+        fetchAddressFromCoords(lat, lng);
+      },
+    });
+    return <Marker position={[formData.lat, formData.lng]} icon={pinIcon} />;
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) {
+      alert("Fitur geolokasi tidak didukung oleh browser Anda.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        fetchAddressFromCoords(latitude, longitude);
+      },
+      (error) => {
+        alert("Gagal mendapatkan lokasi saat ini. Pastikan izin GPS aktif.");
+      },
+    );
   };
 
-  // Fungsi khusus untuk menambah/mengurangi quantity
-  const updateQuantity = (amount) => {
-    setFormData((prev) => ({
-      ...prev,
-      quantity: Math.max(1, prev.quantity + amount),
-    }));
+  const generateOrderCode = () => {
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const random = Math.floor(1000 + Math.random() * 9000);
+    return `STCH-${date}-${random}`;
   };
 
-  const handleSubmit = async (e) => {
+  // --- PROSES KIRIM PESANAN GABUNGAN KE BACKEND ---
+  const handleOrderSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    const customerId = localStorage.getItem("user_id");
+    if (cart.length === 0) {
+      alert(
+        "Keranjang belanja Anda masih kosong. Silakan pilih menu terlebih dahulu.",
+      );
+      return;
+    }
+    setSubmitting(true);
+
     try {
-      // Format payload diubah agar serasi dengan backend baru
-      await api.post("/orders/", {
-        customer_id: parseInt(customerId),
-        package_id: parseInt(formData.package_id),
-        quantity: formData.quantity,
-        status: "pending",
-        payment_method: formData.payment_method,
-        notes: formData.notes,
-        street: formData.address, // Mengirim teks alamat
-        lat: mapPos[0], // Mengirim koordinat Latitude dari peta
-        lng: mapPos[1], // Mengirim koordinat Longitude dari peta
+      const customerId = localStorage.getItem("user_id");
+      const orderCode = generateOrderCode();
+      const finalTotalPrice = calculateTotalPrice();
+
+      // 1. Simpan data alamat pengiriman baru
+      const addrRes = await api.post("/addresses/", {
+        customer_id: customerId,
+        label: formData.address_label,
+        street: formData.street,
+        city: formData.city,
+        lat: formData.lat,
+        lng: formData.lng,
       });
+
+      // 2. Kirim data induk order, list menu item, dan informasi pemenuhan data payment
+      await api.post("/orders/", {
+        order_code: orderCode,
+        customer_id: customerId,
+        address_id: addrRes.data.id,
+        total_price: finalTotalPrice,
+        scheduled_time: formData.scheduled_time,
+        status: "pending",
+        notes: formData.notes,
+        // List menu makanan yang dibeli dikirim sebagai array objek untuk kebutuhan order detail looping di backend
+        order_items: cart.map((item) => ({
+          package_id: item.id,
+          quantity: item.quantity,
+          price_at_order: item.price,
+        })),
+        // Payload pemenuhan parameter pembuatan record pada tabel `payments`
+        payment_data: {
+          amount: finalTotalPrice,
+          method: formData.payment_method,
+          status: formData.payment_method === "cash" ? "pending" : "unpaid",
+        },
+      });
+
+      alert("Seluruh Pesanan dan Alur Pembayaran Berhasil Diproses!");
       navigate("/orders");
-    } catch (error) {
-      alert("Gagal memproses pesanan.");
-      console.error(error);
+    } catch (err) {
+      console.error("Gagal mengirim pesanan:", err);
+      alert("Terjadi kesalahan. Pastikan semua field terisi dengan benar.");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const selectedPackage = packages.find(
-    (p) => p.id === parseInt(formData.package_id),
-  );
-  const subtotal = selectedPackage
-    ? selectedPackage.price * formData.quantity
-    : 0;
-
-  // Ongkir dihapus (set ke 0)
-  const deliveryFee = 0;
-  const totalAmount = subtotal + deliveryFee;
+  if (loading)
+    return (
+      <div className="h-screen flex items-center justify-center bg-white font-['Plus_Jakarta_Sans']">
+        <div className="w-12 h-12 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin"></div>
+      </div>
+    );
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-[#f8fafc] flex flex-col font-sans selection:bg-blue-100 text-slate-700 pb-10 scroll-smooth">
-      {/* HEADER */}
-      <nav className="sticky top-0 z-[1000] bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-[#F8F9FB] font-['Plus_Jakarta_Sans'] pb-36">
+      {/* Top Navbar */}
+      <nav className="fixed top-0 inset-x-0 bg-white/80 backdrop-blur-md z-[1000] border-b border-slate-100">
+        <div className="max-w-2xl mx-auto px-6 h-16 flex items-center gap-4">
           <button
-            onClick={() => navigate("/home")}
-            className="p-2.5 bg-white text-slate-600 rounded-xl shadow-sm border border-slate-200 hover:bg-slate-50 transition-all active:scale-95"
+            onClick={() => navigate(-1)}
+            className="p-2 hover:bg-slate-100 rounded-full transition-colors"
           >
-            <ChevronLeft size={20} />
+            <ChevronLeft size={24} className="text-slate-800" />
           </button>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight leading-none">
-              Konfirmasi Checkout
-            </h1>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-              Stich Logistics
-            </p>
-          </div>
+          <h1 className="font-bold text-lg text-slate-900">
+            Konfirmasi & Tambah Menu
+          </h1>
         </div>
       </nav>
 
-      <main className="flex-1 max-w-6xl mx-auto w-full p-4 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* KOLOM KIRI */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Section Alamat & Peta */}
-          <section className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-slate-100">
-            <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-50">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl border border-blue-100/50">
-                  <MapPin size={24} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                    Lokasi Pengiriman
-                  </h2>
-                  <p className="text-sm font-medium text-slate-500 mt-0.5">
-                    Tentukan titik presisi pengantaran.
-                  </p>
-                </div>
-              </div>
+      <div className="max-w-2xl mx-auto pt-24 px-6 space-y-6">
+        {/* --- DAFTAR MENU YANG AKAN DIBELI (KERANJANG) --- */}
+        <section className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 space-y-4">
+          <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 border-b border-slate-50 pb-3">
+            <ShoppingBag size={18} className="text-blue-600" /> Menu Yang
+            Dipilih
+          </h3>
 
-              <button
-                type="button"
-                onClick={getUserLocation}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all shadow-md active:scale-95"
-              >
-                <LocateFixed size={16} />{" "}
-                <span className="hidden sm:block">Lokasi Saya</span>
-              </button>
-            </div>
-
-            <div className="w-full h-72 rounded-[1.5rem] overflow-hidden border border-slate-200 mb-5 relative bg-slate-100">
-              <MapContainer
-                center={mapPos}
-                zoom={15}
-                style={{ height: "100%", width: "100%" }}
-                zoomControl={false}
-                scrollWheelZoom={false}
-              >
-                <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
-                <Marker position={mapPos} icon={pinIcon} />
-                <MapController pos={mapPos} />
-                <LocationPicker onLocationSelect={handleMapClick} />
-                <ZoomControl position="bottomright" />
-              </MapContainer>
-              {isLocating && (
-                <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-[500] flex items-center justify-center font-bold text-blue-600 text-sm gap-2">
-                  <div className="w-4 h-4 rounded-full bg-blue-600 animate-pulse"></div>{" "}
-                  Memuat Lokasi...
-                </div>
-              )}
-            </div>
-
-            <textarea
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              placeholder="Alamat akan terisi otomatis dari peta..."
-              required
-              rows="3"
-              className="w-full px-5 py-4 bg-[#f8fafc] border border-slate-200 rounded-2xl outline-none focus:bg-white focus:ring-[3px] focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium text-slate-700 resize-none"
-            />
-          </section>
-
-          {/* Section Pembayaran */}
-          <section className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-slate-100">
-            <div className="flex items-center gap-4 mb-6 pb-4 border-b border-slate-50">
-              <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl border border-indigo-100/50">
-                <CreditCard size={24} />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                  Metode Pembayaran
-                </h2>
-                <p className="text-sm font-medium text-slate-500 mt-0.5">
-                  Pilih cara bayar paling aman.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                {
-                  id: "transfer_bank",
-                  label: "Bank Transfer",
-                  desc: "Verifikasi Manual",
-                  icon: <Landmark size={22} />,
-                },
-                {
-                  id: "e_wallet",
-                  label: "E-Wallet",
-                  desc: "Cepat & Instan",
-                  icon: <Wallet size={22} />,
-                },
-                {
-                  id: "cod",
-                  label: "Tunai (COD)",
-                  desc: "Bayar di Tempat",
-                  icon: <Banknote size={22} />,
-                },
-              ].map((method) => (
+          {cart.length === 0 ? (
+            <p className="text-slate-400 text-xs font-medium py-2 text-center">
+              Belum ada menu yang dipilih. Tambahkan menu di bawah.
+            </p>
+          ) : (
+            <div className="space-y-4 divide-y divide-slate-50">
+              {cart.map((item) => (
                 <div
-                  key={method.id}
-                  onClick={() =>
-                    setFormData({ ...formData, payment_method: method.id })
-                  }
-                  className={`cursor-pointer p-5 rounded-2xl transition-all duration-300 flex flex-col items-center gap-3 text-center border ${
-                    formData.payment_method === method.id
-                      ? "border-blue-500 bg-blue-50/50 shadow-[0_8px_20px_-6px_rgba(59,130,246,0.2)] ring-1 ring-blue-500"
-                      : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
-                  }`}
+                  key={item.id}
+                  className="flex items-center justify-between pt-3 first:pt-0"
                 >
-                  <div
-                    className={`p-3 rounded-xl transition-colors ${formData.payment_method === method.id ? "bg-blue-600 text-white shadow-md" : "bg-slate-100 text-slate-500"}`}
-                  >
-                    {method.icon}
-                  </div>
                   <div>
-                    <span className="font-bold text-sm block mb-1 text-slate-900">
-                      {method.label}
+                    <h4 className="font-bold text-slate-900 text-sm">
+                      {item.package_name}
+                    </h4>
+                    <p className="text-blue-600 font-bold text-xs mt-0.5">
+                      Rp {item.price.toLocaleString("id-ID")}
+                    </p>
+                  </div>
+
+                  {/* Pengatur Kuantitas Menu */}
+                  <div className="flex items-center bg-slate-100 rounded-full p-1 border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateQuantity(item.id, -1)}
+                      className="w-7 h-7 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-600"
+                    >
+                      <Minus size={12} />
+                    </button>
+                    <span className="px-3 text-xs font-bold text-slate-800">
+                      {item.quantity}
                     </span>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                      {method.desc}
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateQuantity(item.id, 1)}
+                      className="w-7 h-7 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-600"
+                    >
+                      <Plus size={12} />
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
-          </section>
-        </div>
+          )}
+        </section>
 
-        {/* KOLOM KANAN: SUMMARY */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-24 bg-white rounded-[2rem] p-6 md:p-8 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.06)] border border-slate-100">
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight mb-6 flex items-center gap-3 pb-4 border-b border-slate-50">
-              <div className="w-8 h-8 bg-slate-900 rounded-xl flex items-center justify-center text-white">
-                <ShoppingBag size={16} />
-              </div>
-              Ringkasan Belanja
-            </h2>
-
-            <div className="space-y-6">
-              {/* Item Info + Quantity Selector */}
-              <div className="bg-[#f8fafc] p-5 rounded-2xl border border-slate-100">
-                <div className="flex flex-col gap-3">
-                  <h4 className="font-bold text-slate-900 leading-tight pr-4">
-                    {selectedPackage?.package_name || "Memuat..."}
-                  </h4>
-
-                  {/* QUANTITY SELECTOR (Lebih Elegan) */}
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="flex items-center gap-1 text-slate-500 text-xs font-medium">
-                      <Star
-                        size={12}
-                        className="text-amber-500 fill-amber-500"
-                      />{" "}
-                      Katering Pilihan
-                    </div>
-
-                    <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
-                      <button
-                        type="button"
-                        onClick={() => updateQuantity(-1)}
-                        className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-500 transition-colors"
-                      >
-                        <Minus size={14} />
-                      </button>
-                      <span className="w-8 text-center font-bold text-slate-900 text-sm">
-                        {formData.quantity}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => updateQuantity(1)}
-                        className="p-1.5 hover:bg-slate-50 rounded-lg text-blue-600 transition-colors"
-                      >
-                        <Plus size={14} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Rincian Harga */}
-              <div className="space-y-3 pt-2">
-                <div className="flex justify-between text-sm text-slate-500 font-medium">
-                  <span>Subtotal</span>
-                  <span className="text-slate-900 font-bold">
-                    Rp {subtotal.toLocaleString("id-ID")}
-                  </span>
-                </div>
-
-                {/* Section Ongkir (Dibuat Gratis) */}
-                <div className="flex justify-between text-sm text-slate-500 font-medium">
-                  <span className="flex items-center gap-1.5">
-                    <Truck size={14} className="text-blue-500" /> Pengiriman
-                  </span>
-                  <span className="text-emerald-600 font-bold">Gratis</span>
-                </div>
-
-                <div className="border-t border-dashed border-slate-200 my-4 pt-4">
-                  <div className="flex justify-between items-end">
-                    <span className="text-sm font-bold text-slate-500">
-                      Total Tagihan
-                    </span>
-                    <span className="text-2xl font-black text-slate-900">
-                      Rp {totalAmount.toLocaleString("id-ID")}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={handleSubmit}
-                disabled={loading || !formData.address || !formData.package_id}
-                className="w-full mt-4 py-4.5 bg-blue-600 hover:bg-blue-700 text-white text-base font-bold rounded-2xl transition-all shadow-[0_8px_20px_-6px_rgba(59,130,246,0.5)] flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed group"
+        {/* --- FITUR BARU: PILIHAN TAMBAHAN MENU KATERING LAINNYA --- */}
+        <section className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 space-y-4">
+          <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 border-b border-slate-50 pb-3">
+            <Utensils size={18} className="text-blue-600" /> Tambah Pilihan Menu
+            Lainnya
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[260px] overflow-y-auto pr-1">
+            {allPackages.map((menu) => (
+              <div
+                key={menu.id}
+                className="p-3.5 bg-slate-50/60 rounded-2xl border border-slate-100 flex items-center justify-between group hover:bg-slate-50 transition-colors"
               >
-                {loading ? "Memproses..." : "Bayar Pesanan"}
-                {!loading && (
-                  <ArrowRight
-                    size={20}
-                    className="group-hover:translate-x-1 transition-transform"
+                <div className="truncate pr-2">
+                  <h4 className="font-bold text-slate-800 text-xs truncate">
+                    {menu.package_name}
+                  </h4>
+                  <p className="text-slate-500 font-semibold text-[11px] mt-0.5">
+                    Rp {menu.price.toLocaleString("id-ID")}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleAddMenuToCart(menu)}
+                  className="px-3 py-1.5 bg-white border border-slate-200 hover:border-blue-600 hover:bg-blue-600 hover:text-white rounded-xl text-xs font-bold text-slate-700 transition-all shadow-sm active:scale-95"
+                >
+                  Tambah
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* --- MAPS PICKER --- */}
+        <section className="bg-white rounded-[2rem] overflow-hidden shadow-sm border border-slate-100 relative">
+          <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Navigation size={20} className="text-blue-600" />
+              <h3 className="font-bold text-slate-800">
+                Tentukan Titik Pengiriman
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={handleLocateMe}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-bold rounded-xl transition-all shadow-sm"
+            >
+              <Locate size={14} /> Lokasi Saya
+            </button>
+          </div>
+          <div className="h-[220px] relative z-0">
+            <MapContainer
+              center={[formData.lat, formData.lng]}
+              zoom={14}
+              className="h-full w-full"
+            >
+              <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
+              <LocationPicker />
+              <RecenterMap lat={formData.lat} lng={formData.lng} />
+            </MapContainer>
+          </div>
+          <div className="p-6 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                  Label Alamat
+                </label>
+                <input
+                  className="w-full mt-1.5 px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-blue-500/20 outline-none"
+                  placeholder="Contoh: Rumah, Kantor"
+                  value={formData.address_label}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address_label: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                  Kota
+                </label>
+                <div className="relative">
+                  <Building
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    size={16}
                   />
-                )}
-              </button>
+                  <input
+                    readOnly
+                    className="w-full mt-1.5 pl-10 pr-4 py-3 bg-slate-100 border-none rounded-2xl text-sm font-semibold text-slate-500 outline-none"
+                    value={formData.city}
+                  />
+                </div>
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                Alamat Lengkap (Otomatis dari Peta)
+              </label>
+              <textarea
+                readOnly
+                className="w-full mt-1.5 px-4 py-3 bg-slate-100 border-none rounded-2xl text-sm font-medium text-slate-500 outline-none resize-none"
+                rows="2"
+                value={formData.street}
+              />
             </div>
           </div>
+        </section>
+
+        {/* Waktu & Detail Metode Pembayaran */}
+        <section className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 space-y-5">
+          <div className="flex flex-col sm:flex-row gap-5">
+            <div className="flex-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                <Clock size={14} /> Waktu Pengiriman
+              </label>
+              <input
+                type="datetime-local"
+                required
+                className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-blue-500/20 outline-none"
+                value={formData.scheduled_time}
+                onChange={(e) =>
+                  setFormData({ ...formData, scheduled_time: e.target.value })
+                }
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                <CreditCard size={14} /> Metode Pembayaran
+              </label>
+              <select
+                className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-blue-500/20 outline-none appearance-none cursor-pointer"
+                value={formData.payment_method}
+                onChange={(e) =>
+                  setFormData({ ...formData, payment_method: e.target.value })
+                }
+              >
+                <option value="cash">Cash on Delivery (COD)</option>
+                <option value="transfer">Bank Transfer</option>
+                <option value="ewallet">E-Wallet (OVO/Dana)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+              <StickyNote size={14} /> Catatan Pesanan
+            </label>
+            <textarea
+              className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 outline-none resize-none"
+              rows="3"
+              placeholder="Contoh: Tolong pisahkan kuah, tambah sendok..."
+              value={formData.notes}
+              onChange={(e) =>
+                setFormData({ ...formData, notes: e.target.value })
+              }
+            />
+          </div>
+        </section>
+      </div>
+
+      {/* Bottom Floating Billing Bar */}
+      <div className="fixed bottom-0 inset-x-0 bg-white/90 backdrop-blur-xl border-t border-slate-100 z-[1000] px-6 py-5">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              Total Pembayaran
+            </p>
+            <p className="text-2xl font-black text-slate-900 tracking-tight">
+              Rp {calculateTotalPrice().toLocaleString("id-ID")}
+            </p>
+          </div>
+          <button
+            onClick={handleOrderSubmit}
+            disabled={
+              submitting ||
+              cart.length === 0 ||
+              !formData.scheduled_time ||
+              !formData.street
+            }
+            className="px-8 py-4 bg-slate-900 text-white rounded-[1.5rem] font-bold shadow-xl shadow-slate-900/10 hover:bg-blue-600 hover:shadow-blue-500/20 transition-all active:scale-[0.98] disabled:bg-slate-300 disabled:shadow-none"
+          >
+            {submitting ? "Memproses..." : "Pesan Sekarang"}
+          </button>
         </div>
-      </main>
+      </div>
+
+      <style>{`
+        .leaflet-container { border-bottom: 1px solid #f1f5f9; }
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator { cursor: pointer; filter: invert(0.4); }
+      `}</style>
     </div>
   );
 };

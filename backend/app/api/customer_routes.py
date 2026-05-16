@@ -59,9 +59,9 @@ def login_customer(payload: CustomerLoginRequest, db: Session = Depends(get_db))
     # C. Kembalikan response payload data yang sesuai dengan kebutuhan CustomerLogin.jsx
     # (Jika kamu sudah setup sistem JWT token asli, silakan ganti string token ini dengan generator JWT kamu)
     return {
-        "access_token": f"session-token-customer-{customer.id}",
-        "token": f"session-token-customer-{customer.id}", # Tambahan cadangan key token
-        "role": "user",
-        "user_id": customer.id,
-        "name": customer.name
+    "access_token": f"session-token-customer-{customer.id}",
+    "token": f"session-token-customer-{customer.id}",
+    "role": "user", # Pastikan ini 'user' sesuai allowedRoles di App.jsx
+    "user_id": customer.id,
+    "name": customer.name
     }

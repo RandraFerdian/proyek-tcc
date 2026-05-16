@@ -9,6 +9,7 @@ import {
 // Public & Auth
 import LandingPage from "./pages/LandingPage";
 import CustomerLogin from "./pages/CustomerLogin";
+import CustomerRegister from "./pages/CustomerRegister";
 import AdminLogin from "./pages/AdminLogin";
 import CourierLogin from "./pages/CourierLogin";
 
@@ -17,7 +18,6 @@ import CustomerHome from "./pages/CustomerHome";
 import OrderFood from "./pages/OrderFood";
 import MyOrders from "./pages/MyOrders";
 import CustomerTracking from "./pages/CustomerTracking";
-import CustomerRegister from "./pages/CustomerRegister";
 
 // Admin
 import Dashboard from "./pages/Dashboard";
@@ -42,7 +42,9 @@ const ProtectedRoute = ({ children, allowedRoles, loginPath }) => {
     // Arahkan kembali ke "rumah" masing-masing berdasarkan role asli mereka
     if (userRole === "admin") return <Navigate to="/admin" replace />;
     if (userRole === "courier") return <Navigate to="/courier" replace />;
-    return <Navigate to="/home" replace />; // Default kembalikan ke customer
+    
+    // PERBAIKAN: Default kembalikan ke customer home yang benar
+    return <Navigate to="/customer/home" replace />; 
   }
 
   // 3. Jika aman, persilakan masuk
@@ -56,17 +58,21 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        {/* --- PUBLIC ROUTES (Bisa diakses siapa saja) --- */}
+        {/* --- PUBLIC ROUTES --- */}
         <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<CustomerLogin />} />
+        
+        {/* PERBAIKAN: Menggunakan rute dengan awalan /customer/ */}
+        <Route path="/customer/login" element={<CustomerLogin />} />
+        <Route path="/customer/register" element={<CustomerRegister />} />
+        
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/courier/login" element={<CourierLogin />} />
 
         {/* --- CUSTOMER ROUTES (Hanya untuk role 'user') --- */}
         <Route
-          path="/home"
+          path="/customer/home" /* PERBAIKAN: Disesuaikan dengan tujuan login */
           element={
-            <ProtectedRoute allowedRoles={["user"]} loginPath="/login">
+            <ProtectedRoute allowedRoles={["user"]} loginPath="/customer/login">
               <CustomerHome />
             </ProtectedRoute>
           }
@@ -74,7 +80,7 @@ const App = () => {
         <Route
           path="/order-food"
           element={
-            <ProtectedRoute allowedRoles={["user"]} loginPath="/login">
+            <ProtectedRoute allowedRoles={["user"]} loginPath="/customer/login">
               <OrderFood />
             </ProtectedRoute>
           }
@@ -82,7 +88,7 @@ const App = () => {
         <Route
           path="/orders"
           element={
-            <ProtectedRoute allowedRoles={["user"]} loginPath="/login">
+            <ProtectedRoute allowedRoles={["user"]} loginPath="/customer/login">
               <MyOrders />
             </ProtectedRoute>
           }
@@ -90,7 +96,7 @@ const App = () => {
         <Route
           path="/tracking/:orderId"
           element={
-            <ProtectedRoute allowedRoles={["user"]} loginPath="/login">
+            <ProtectedRoute allowedRoles={["user"]} loginPath="/customer/login">
               <CustomerTracking />
             </ProtectedRoute>
           }
@@ -131,26 +137,21 @@ const App = () => {
         />
 
         {/* --- COURIER ROUTES (Hanya untuk role 'courier') --- */}
-        {/* Saat ini fitur kurir belum full, kita siapkan jalurnya */}
         <Route
           path="/courier"
           element={
-            <ProtectedRoute
-              allowedRoles={["courier"]}
-              loginPath="/courier/login"
-            >
-              {/* Ganti dengan komponen Dashboard Kurir nantinya */}
-              <div className="p-10 text-center font-bold text-2xl">
+            <ProtectedRoute allowedRoles={["courier"]} loginPath="/courier/login">
+              <div className="p-10 text-center font-bold text-2xl font-['Plus_Jakarta_Sans']">
                 Selamat Datang, Kurir!
               </div>
             </ProtectedRoute>
           }
         />
-
-        {/* --- CATCH ALL (Jika ketik URL sembarangan/404) --- */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-        <Route path="/customer/register" element={<CustomerRegister />} />
         <Route path="/customer/login" element={<CustomerLogin />} />
+        <Route path="/customer/register" element={<CustomerRegister />} />
+
+        {/* --- CATCH ALL (WAJIB DITARUH PALING BAWAH) --- */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );

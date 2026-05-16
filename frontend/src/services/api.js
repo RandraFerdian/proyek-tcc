@@ -1,22 +1,17 @@
 import axios from "axios";
 
 const api = axios.create({
-  // URL ini diambil dari file .env frontend yang kita buat sebelumnya
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1",
-  headers: {
-    "Content-Type": "application/json",
-  },
+  baseURL: "http://localhost:8000/api/v1", // Sesuaikan dengan URL backend milikmu
 });
 
-// --- TAMBAHAN INTERCEPTOR ---
-// Fungsi ini akan berjalan otomatis SEBELUM request dikirim ke backend
+// TAMBAHKAN KODE INTERCEPTOR INI:
 api.interceptors.request.use(
   (config) => {
-    // Ambil token dari penyimpanan lokal browser
+    // Mengambil token dengan kunci 'token' sesuai yang disimpan saat login
     const token = localStorage.getItem("token");
 
-    // Jika token ada, sisipkan ke dalam Header Authorization
     if (token) {
+      // Menyuntikkan token ke dalam header HTTP Authorization Bearer
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
