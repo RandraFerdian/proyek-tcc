@@ -25,6 +25,7 @@ const CustomerRegister = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleChange = (e) => {
     setFormData({
@@ -37,14 +38,14 @@ const CustomerRegister = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setSuccess("");
 
     try {
-      // Menembak ke endpoint backend /api/v1/auth/customer/register
       const response = await api.post("/auth/customer/register", formData);
 
       if (response.data) {
-        alert("Pendaftaran Berhasil! Silakan masuk ke akun Anda.");
-        navigate("/customer/login");
+        setSuccess("Pendaftaran berhasil. Mengarahkan ke halaman login...");
+        setTimeout(() => navigate("/customer/login"), 700);
       }
     } catch (err) {
       setError(
@@ -57,9 +58,7 @@ const CustomerRegister = () => {
   };
 
   return (
-    // PERBAIKAN SCROLL: Menggunakan h-full, min-h-screen, dan overflow-y-auto yang dikunci dengan benar
-    <div className="min-h-screen w-full bg-[#F4F7FB] px-4 py-12 font-['Plus_Jakarta_Sans'] overflow-y-auto relative flex justify-center items-center">
-      {/* Background Decor — Diubah ke absolute agar ikut bergeser secara alami saat scroll halaman ditarik */}
+    <div className="min-h-screen w-full bg-[#F4F7FB] px-4 py-12 font-sans overflow-y-auto relative flex justify-center items-center">
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute top-[-10%] -left-[5%] w-[400px] h-[400px] bg-blue-200/30 rounded-full blur-[100px]" />
         <div className="absolute bottom-[-10%] -right-[5%] w-[400px] h-[400px] bg-indigo-200/30 rounded-full blur-[100px]" />
@@ -96,6 +95,13 @@ const CustomerRegister = () => {
             <div className="mb-6 p-4 bg-rose-50 border border-rose-100 text-rose-600 text-xs font-bold rounded-2xl flex items-center gap-3 animate-pulse">
               <div className="w-1.5 h-1.5 rounded-full bg-rose-600" />
               {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold rounded-2xl flex items-center gap-3">
+              <CheckCircle2 size={16} />
+              {success}
             </div>
           )}
 
@@ -205,7 +211,7 @@ const CustomerRegister = () => {
                   type="password"
                   name="password"
                   required
-                  placeholder="••••••••"
+                  placeholder="Password akun"
                   value={formData.password}
                   onChange={handleChange}
                   className="w-full pl-12 pr-4 py-4 bg-slate-100/50 border-2 border-transparent focus:border-blue-500/20 focus:bg-white focus:ring-4 focus:ring-blue-500/5 outline-none rounded-[1.25rem] text-sm font-semibold text-slate-800 transition-all"
@@ -251,7 +257,7 @@ const CustomerRegister = () => {
         <div className="mt-8 flex items-center justify-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
           <div className="flex items-center gap-1">
             <CheckCircle2 size={12} />
-            Secure Connection
+            Koneksi Aman
           </div>
           <div className="w-1 h-1 bg-slate-300 rounded-full" />
           <div>Terenkripsi</div>

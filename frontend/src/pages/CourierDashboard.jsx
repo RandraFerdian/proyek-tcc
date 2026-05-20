@@ -239,11 +239,11 @@ const CourierDashboard = () => {
       <div className="mx-auto max-w-5xl">
         <header className="mb-6 flex flex-col gap-4 rounded-[2rem] border border-white bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-50 text-violet-700 ring-1 ring-violet-100">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 ring-1 ring-blue-100">
               <Truck size={28} />
             </div>
             <div>
-              <p className="text-xs font-black uppercase tracking-widest text-violet-600">Courier Workspace</p>
+              <p className="text-xs font-black uppercase tracking-widest text-blue-600">Ruang Kerja Kurir</p>
               <h1 className="text-2xl font-black tracking-tight">Halo, {courierName}</h1>
             </div>
           </div>

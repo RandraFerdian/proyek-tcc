@@ -87,7 +87,7 @@ const CustomerHome = () => {
 
   // PERBAIKAN: Pelindung tambahan pada packages array
   const filteredPackages = (packages || []).filter((pkg) => {
-    const packageName = pkg.name || "";
+    const packageName = pkg.package_name || pkg.name || "";
     return packageName.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
@@ -260,7 +260,7 @@ const CustomerHome = () => {
                           </div>
                         </div>
                         <h4 className="font-bold text-slate-800 text-lg leading-tight mb-2 group-hover:text-blue-600 transition-colors">
-                          {pkg.name}
+                          {pkg.package_name || pkg.name}
                         </h4>
                         <p className="text-slate-500 text-[13px] font-medium line-clamp-2 leading-relaxed">
                           {pkg.description ||

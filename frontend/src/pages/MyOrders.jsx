@@ -24,14 +24,9 @@ const MyOrders = () => {
         setLoading(true);
         const response = await api.get("/orders/me");
 
-        // Cek langsung apa isi balasan dari backend di Console Browser (F12)
-        console.log("=== DATA API ORDERS ===", response.data);
-
-        // PERBAIKAN: Memastikan data yang diset adalah Array yang valid
         if (Array.isArray(response.data)) {
           setRawOrders(response.data);
         } else if (response.data && Array.isArray(response.data.data)) {
-          // Jaga-jaga jika backend membungkusnya dalam objek "data"
           setRawOrders(response.data.data);
         } else {
           setRawOrders([]);
@@ -46,13 +41,10 @@ const MyOrders = () => {
     fetchMyOrders();
   }, []);
 
-  // --- LOGIKA GROUPING ANTI-ERROR ---
   const groupedOrders = useMemo(() => {
-    // Pastikan rawOrders selalu sebuah Array sebelum di-reduce
     const safeOrders = Array.isArray(rawOrders) ? rawOrders : [];
 
     const groups = safeOrders.reduce((acc, order) => {
-      // Abaikan jika data order kosong atau rusak
       if (!order) return acc;
 
       const code = order.order_code || `ORD-${order.id || "UNKNOWN"}`;
@@ -80,7 +72,6 @@ const MyOrders = () => {
     }, {});
 
     return Object.values(groups).sort((a, b) => {
-      // Amankan fungsi sorting jika tanggal kosong
       const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
       const dateB = b.created_at ? new Date(b.created_at) : new Date(0);
       return dateB - dateA;
@@ -117,7 +108,7 @@ const MyOrders = () => {
   };
 
   return (
-    <div className="h-screen w-full bg-slate-50 flex flex-col font-['Plus_Jakarta_Sans'] overflow-hidden relative">
+    <div className="h-screen w-full bg-slate-50 flex flex-col font-sans overflow-hidden relative">
       <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-slate-100 px-6 py-5 flex items-center gap-4">
         <button
           onClick={() => navigate("/customer/home")}
@@ -130,7 +121,7 @@ const MyOrders = () => {
             Riwayat Pesanan
           </h1>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-            Stich Logistics Dashboard
+            Katering Stich
           </p>
         </div>
       </nav>
@@ -167,7 +158,9 @@ const MyOrders = () => {
               const status = getStatusConfig(group.status);
 
               const firstItemName =
-                group.items[0]?.package?.name || "Paket Custom Katering";
+                group.items[0]?.package?.package_name ||
+                group.items[0]?.package?.name ||
+                "Paket Custom Katering";
               const extraItemsCount = group.items.length - 1;
               const displayTitle =
                 extraItemsCount > 0
@@ -277,7 +270,9 @@ const MyOrders = () => {
                     >
                       <div>
                         <p className="font-bold text-slate-900 text-sm">
-                          {item.package?.name || "Paket Custom Katering"}
+                          {item.package?.package_name ||
+                            item.package?.name ||
+                            "Paket Custom Katering"}
                         </p>
                         <p className="text-xs text-slate-500 mt-0.5 font-medium">
                           {item.quantity} Porsi x Rp{" "}

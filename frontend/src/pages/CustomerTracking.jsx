@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { MapContainer, TileLayer, Marker, Polyline, Popup, ZoomControl } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Polyline,
+  Popup,
+  ZoomControl,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { ArrowLeft, Clock, MapPin, Navigation, Phone } from "lucide-react";
@@ -68,6 +75,9 @@ const CustomerTracking = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // STATE BARU: Untuk menyimpan titik rute jalan raya OSRM
+  const [routePath, setRoutePath] = useState([]);
+
   const fetchOrder = useCallback(async () => {
     try {
       setError("");
@@ -90,18 +100,74 @@ const CustomerTracking = () => {
 
   const courierLoc = order?.courier_location;
   const destination =
-    order?.lat && order?.lng ? { lat: Number(order.lat), lng: Number(order.lng) } : null;
-  const isDelivering = ["dikirim", "in transit"].includes((order?.status || "").toLowerCase());
-  const courierPosition = courierLoc?.lat && courierLoc?.lng
-    ? { lat: Number(courierLoc.lat), lng: Number(courierLoc.lng), fromGps: true }
-    : isDelivering
-      ? { lat: KITCHEN_LOCATION.lat, lng: KITCHEN_LOCATION.lng, fromGps: false }
+    order?.lat && order?.lng
+      ? { lat: Number(order.lat), lng: Number(order.lng) }
       : null;
-  const routePoints = [
-    [KITCHEN_LOCATION.lat, KITCHEN_LOCATION.lng],
-    ...(courierPosition ? [[courierPosition.lat, courierPosition.lng]] : []),
-    ...(destination ? [[destination.lat, destination.lng]] : []),
-  ];
+  const isDelivering = ["dikirim", "in transit"].includes(
+    (order?.status || "").toLowerCase(),
+  );
+  const courierPosition =
+    courierLoc?.lat && courierLoc?.lng
+      ? {
+          lat: Number(courierLoc.lat),
+          lng: Number(courierLoc.lng),
+          fromGps: true,
+        }
+      : isDelivering
+        ? {
+            lat: KITCHEN_LOCATION.lat,
+            lng: KITCHEN_LOCATION.lng,
+            fromGps: false,
+          }
+      : null;
+  const routeStart = courierPosition || {
+    lat: KITCHEN_LOCATION.lat,
+    lng: KITCHEN_LOCATION.lng,
+  };
+  const routeEnd = destination;
+  const routeStartLat = routeStart.lat;
+  const routeStartLng = routeStart.lng;
+  const routeEndLat = routeEnd?.lat;
+  const routeEndLng = routeEnd?.lng;
+
+  // FITUR BARU: OSRM Route Fetcher
+  useEffect(() => {
+    if (routeEndLat && routeEndLng) {
+      const fetchRealRoute = async () => {
+        try {
+          const response = await fetch(
+            `https://router.project-osrm.org/route/v1/driving/${routeStartLng},${routeStartLat};${routeEndLng},${routeEndLat}?overview=full&geometries=geojson`,
+          );
+          const data = await response.json();
+
+          if (data.routes && data.routes.length > 0) {
+            // OSRM return [Lng, Lat], Leaflet butuh [Lat, Lng]
+            const coords = data.routes[0].geometry.coordinates.map((c) => [
+              c[1],
+              c[0],
+            ]);
+            setRoutePath(coords);
+          } else {
+            setRoutePath([
+              [routeStartLat, routeStartLng],
+              [routeEndLat, routeEndLng],
+            ]); // Fallback garis lurus
+          }
+        } catch (err) {
+          console.error("Gagal mengambil rute OSRM:", err);
+          setRoutePath([
+            [routeStartLat, routeStartLng],
+            [routeEndLat, routeEndLng],
+          ]); // Fallback garis lurus
+        }
+      };
+      fetchRealRoute();
+    } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRoutePath([]);
+    }
+  }, [routeStartLat, routeStartLng, routeEndLat, routeEndLng]);
+
   const mapCenter = courierPosition
     ? [courierPosition.lat, courierPosition.lng]
     : destination
@@ -129,24 +195,32 @@ const CustomerTracking = () => {
         />
         <ZoomControl position="bottomright" />
 
-        <Marker position={[KITCHEN_LOCATION.lat, KITCHEN_LOCATION.lng]} icon={createKitchenIcon()}>
+        <Marker
+          position={[KITCHEN_LOCATION.lat, KITCHEN_LOCATION.lng]}
+          icon={createKitchenIcon()}
+        >
           <Popup>{KITCHEN_LOCATION.name}</Popup>
         </Marker>
 
-        {routePoints.length >= 2 && (
+        {/* MENGGUNAKAN ROUTE PATH DARI OSRM */}
+        {routePath.length >= 2 && (
           <Polyline
-            positions={routePoints}
+            positions={routePath}
             pathOptions={{
               color: "#2563eb",
               weight: 5,
-              opacity: 0.75,
+              opacity: 0.8,
               dashArray: courierPosition?.fromGps ? undefined : "10 12",
             }}
+            className="animate-pulse" // Animasi denyut opsional
           />
         )}
 
         {destination && (
-          <Marker position={[destination.lat, destination.lng]} icon={createDestinationIcon()}>
+          <Marker
+            position={[destination.lat, destination.lng]}
+            icon={createDestinationIcon()}
+          >
             <Popup>Lokasi tujuan pengiriman</Popup>
           </Marker>
         )}
@@ -165,6 +239,7 @@ const CustomerTracking = () => {
         )}
       </MapContainer>
 
+      {/* Bagian Bawah Tetap Sama... */}
       <div className="absolute bottom-8 left-1/2 z-[1000] w-[90%] max-w-md -translate-x-1/2">
         <div className="rounded-[2rem] border border-white bg-white/90 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.1)] backdrop-blur-2xl">
           <div className="flex items-center gap-4">
@@ -173,12 +248,20 @@ const CustomerTracking = () => {
             </div>
             <div className="flex-1">
               <p className="mb-0.5 text-[10px] font-black uppercase tracking-widest text-blue-600">
-                {loading ? "Memuat Tracking" : order?.status === "selesai" ? "Pesanan Selesai" : "Kurir Pengantar"}
+                {loading
+                  ? "Memuat Tracking"
+                  : order?.status === "selesai"
+                    ? "Pesanan Selesai"
+                    : "Kurir Pengantar"}
               </p>
               <h2 className="text-xl font-bold text-slate-900">
                 {order?.courier?.name || "Menunggu kurir ditugaskan"}
               </h2>
-              {error && <p className="mt-1 text-xs font-semibold text-rose-600">{error}</p>}
+              {error && (
+                <p className="mt-1 text-xs font-semibold text-rose-600">
+                  {error}
+                </p>
+              )}
             </div>
             <button className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-600 transition-all hover:bg-slate-100 hover:text-blue-600 active:scale-90">
               <Phone size={20} />
@@ -189,12 +272,19 @@ const CustomerTracking = () => {
             <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
               <Navigation size={16} className="text-blue-500" />
               <span>
-                Status: <span className="font-bold capitalize text-slate-900">{order?.status || "pending"}</span>
+                Status:{" "}
+                <span className="font-bold capitalize text-slate-900">
+                  {order?.status || "pending"}
+                </span>
               </span>
             </div>
             <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
               <MapPin size={16} className="text-emerald-500" />
-              <span className="line-clamp-2">{order?.address?.street || order?.street || "Alamat tujuan belum tersedia"}</span>
+              <span className="line-clamp-2">
+                {order?.address?.street ||
+                  order?.street ||
+                  "Alamat tujuan belum tersedia"}
+              </span>
             </div>
             <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
               <Clock size={16} className="text-blue-500" />
@@ -212,7 +302,10 @@ const CustomerTracking = () => {
             <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
               <MapPin size={16} className="text-slate-700" />
               <span>
-                Titik awal: <span className="font-bold text-slate-900">{KITCHEN_LOCATION.shortName}</span>
+                Titik awal:{" "}
+                <span className="font-bold text-slate-900">
+                  {KITCHEN_LOCATION.shortName}
+                </span>
               </span>
             </div>
           </div>

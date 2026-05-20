@@ -11,6 +11,7 @@ from ..models.order_model import Order
 from ..models.address_model import Address
 from ..models.package_model import CateringPackage
 from ..models.route_model import DeliveryRoute
+from ..models.courier_model import Courier
 from ..core.security import get_current_customer 
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
@@ -130,6 +131,10 @@ def get_all_orders(customer_id: Optional[int] = Query(default=None), db: Session
 
 @router.get("/courier/{courier_id}")
 def get_courier_orders(courier_id: int, include_available: bool = True, db: Session = Depends(get_db)):
+    courier = db.query(Courier).filter(Courier.id == courier_id).first()
+    if not courier:
+        raise HTTPException(status_code=404, detail="Kurir tidak ditemukan. Silakan login ulang.")
+
     query = db.query(Order)
     if include_available:
         query = query.filter((Order.courier_id == courier_id) | (Order.courier_id.is_(None)))
@@ -210,6 +215,13 @@ def assign_order_courier(order_id: int, payload: OrderCourierAssign, db: Session
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Pesanan tidak ditemukan")
+
+    courier = db.query(Courier).filter(Courier.id == payload.courier_id).first()
+    if not courier:
+        raise HTTPException(status_code=404, detail="Kurir tidak ditemukan. Silakan login ulang.")
+
+    if order.courier_id and order.courier_id != payload.courier_id:
+        raise HTTPException(status_code=409, detail="Pesanan sudah diambil kurir lain.")
 
     order.courier_id = payload.courier_id
     if not order.status or order.status.lower() == "pending":

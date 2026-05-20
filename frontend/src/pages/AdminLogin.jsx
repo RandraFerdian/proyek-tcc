@@ -43,8 +43,9 @@ const AdminLogin = () => {
       });
 
       if (response.data.access_token) {
+        localStorage.clear(); 
         localStorage.setItem("token", response.data.access_token);
-        localStorage.setItem("user_role", response.data.role);
+        localStorage.setItem("user_role", response.data.role?.toLowerCase()|| "admin");
         localStorage.setItem("user_id", response.data.user_id);
         navigate("/admin");
       }

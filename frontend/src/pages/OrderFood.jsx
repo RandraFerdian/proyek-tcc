@@ -231,13 +231,13 @@ const OrderFood = () => {
 
   if (loading)
     return (
-      <div className="h-screen flex items-center justify-center bg-white font-['Plus_Jakarta_Sans']">
+      <div className="h-screen flex items-center justify-center bg-white font-sans">
         <div className="w-12 h-12 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin"></div>
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-[#F8F9FB] font-['Plus_Jakarta_Sans'] pb-36">
+    <div className="min-h-screen bg-[#F8F9FB] font-sans pb-36">
       {/* Top Navbar */}
       <nav className="fixed top-0 inset-x-0 bg-white/80 backdrop-blur-md z-[1000] border-b border-slate-100">
         <div className="max-w-2xl mx-auto px-6 h-16 flex items-center gap-4">

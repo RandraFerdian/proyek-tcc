@@ -105,11 +105,8 @@ const LandingPage = () => {
               <div className="w-full h-full bg-slate-100 rounded-[2.2rem] overflow-hidden relative border-2 border-slate-900">
                 {/* Bagian Peta (Leaflet Preview) */}
                 <div className="absolute inset-0 bg-[#f8f9fa]">
-                  <img
-                    src="https://api.mapbox.com/styles/v1/mapbox/light-v11/static/pin-s-l+285AEC(110.3695,-7.7971)/110.3695,-7.7971,14,0/1000x600?access_token=pk.ey..."
-                    alt="Map Preview"
-                    className="w-full h-full object-cover opacity-80"
-                  />
+                  <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(37,99,235,0.08)_1px,transparent_1px),linear-gradient(rgba(37,99,235,0.08)_1px,transparent_1px)] bg-[size:56px_56px]" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(37,99,235,0.18),transparent_35%),linear-gradient(135deg,#eff6ff,#f8fafc_45%,#ecfdf5)]" />
 
                   {/* Fake Courier Marker */}
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 relative z-10">
@@ -125,7 +122,7 @@ const LandingPage = () => {
 
                 {/* Info Panel Melayang (Stylized Bottom Sheet) */}
                 <div className="absolute bottom-5 left-5 right-5 bg-white/90 backdrop-blur-lg p-5 rounded-3xl shadow-xl border border-white flex items-center gap-4 transition-transform duration-500 group-hover:translate-y-[-10px]">
-                  <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center font-black text-blue-600 text-lg border-2 border-whiteshadow-inner">
+                  <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center font-black text-blue-600 text-lg border-2 border-white shadow-inner">
                     R
                   </div>
                   <div className="flex-1 text-left">
@@ -223,7 +220,7 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-6 text-center flex flex-col items-center">
           <Star className="text-amber-400 fill-amber-400 mb-6" size={32} />
           <p className="text-3xl md:text-4xl font-medium text-slate-950 max-w-3xl leading-snug tracking-tight mb-10">
-            "Stich Logistics benar-benar mengubah cara kami mengelola
+            "Katering Stich benar-benar mengubah cara kami mengelola
             pengiriman. Kepuasan pelanggan meningkat drastis karena mereka bisa
             melacak pesanan selagi menunggu."
           </p>
@@ -247,7 +244,7 @@ const LandingPage = () => {
       <footer className="bg-slate-950 py-16 border-t border-slate-800 mt-auto relative z-10">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-centershadow-blue-600/30">
+            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center shadow-blue-600/30">
               <Package className="text-white" size={18} strokeWidth={2.5} />
             </div>
             <span className="text-xl font-black text-white tracking-tighter">
@@ -255,7 +252,7 @@ const LandingPage = () => {
             </span>
           </div>
           <p className="text-sm font-medium text-slate-400">
-            © {new Date().getFullYear()} Stich Logistics. Mengirim kehangatan,
+            © {new Date().getFullYear()} Katering Stich. Mengirim kehangatan,
             tepat waktu.
           </p>
         </div>

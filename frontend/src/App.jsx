@@ -32,21 +32,24 @@ import AdminBottomNav from "./components/AdminBottomNav";
 // ==========================================
 const ProtectedRoute = ({ children, allowedRoles, loginPath }) => {
   const token = localStorage.getItem("token");
-  const userRole = localStorage.getItem("user_role");
+  // Gunakan optional chaining & lowercase agar aman dari salah ketik/huruf besar
+  const userRole = localStorage.getItem("user_role")?.toLowerCase();
 
-  // 1. Jika tidak ada token (belum login), tendang ke halaman login yang sesuai
+  // 1. Jika tidak ada token (belum login), tendang ke halaman login
   if (!token) {
     return <Navigate to={loginPath} replace />;
   }
 
-  // 2. Jika sudah login tapi role-nya tidak diizinkan mengakses halaman ini (Mencegah Bocor)
+  // 2. Jika sudah login tapi role-nya tidak diizinkan mengakses halaman ini
   if (allowedRoles && !allowedRoles.includes(userRole)) {
-    // Arahkan kembali ke "rumah" masing-masing berdasarkan role asli mereka
     if (userRole === "admin") return <Navigate to="/admin" replace />;
     if (userRole === "courier") return <Navigate to="/courier" replace />;
-    
-    // PERBAIKAN: Default kembalikan ke customer home yang benar
-    return <Navigate to="/customer/home" replace />; 
+    if (userRole === "user") return <Navigate to="/customer/home" replace />;
+
+    // PERBAIKAN: Jika role tidak dikenali (misal "undefined" atau datanya rusak),
+    // hapus sesi yang error tersebut dan kembalikan ke halaman utama (Landing Page).
+    localStorage.clear();
+    return <Navigate to="/" replace />;
   }
 
   // 3. Jika aman, persilakan masuk
@@ -71,11 +74,10 @@ const App = () => {
       <Routes>
         {/* --- PUBLIC ROUTES --- */}
         <Route path="/" element={<LandingPage />} />
-        
+
         {/* PERBAIKAN: Menggunakan rute dengan awalan /customer/ */}
         <Route path="/customer/login" element={<CustomerLogin />} />
         <Route path="/customer/register" element={<CustomerRegister />} />
-        
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/courier/login" element={<CourierLogin />} />
 
@@ -159,14 +161,14 @@ const App = () => {
         <Route
           path="/courier"
           element={
-            <ProtectedRoute allowedRoles={["courier"]} loginPath="/courier/login">
+            <ProtectedRoute
+              allowedRoles={["courier"]}
+              loginPath="/courier/login"
+            >
               <CourierDashboard />
             </ProtectedRoute>
           }
         />
-        <Route path="/customer/login" element={<CustomerLogin />} />
-        <Route path="/customer/register" element={<CustomerRegister />} />
-
         {/* --- CATCH ALL (WAJIB DITARUH PALING BAWAH) --- */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

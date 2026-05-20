@@ -16,29 +16,32 @@ const CustomerLogin = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  setError("");
-  try {
-    const response = await api.post("/auth/customer/login", formData);
-    if (response.data && (response.data.token || response.data.access_token)) {
-      localStorage.clear(); // Bersihkan dulu
-      localStorage.setItem("token", response.data.token || response.data.access_token);
-      localStorage.setItem("user_role", response.data.role || "user");
-      localStorage.setItem("user_id", response.data.user_id);
-      localStorage.setItem("user_name", response.data.name || "Pelanggan");
-      navigate("/customer/home");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const response = await api.post("/auth/customer/login", formData);
+      if (response.data && (response.data.token || response.data.access_token)) {
+        localStorage.clear();
+        localStorage.setItem(
+          "token",
+          response.data.token || response.data.access_token,
+        );
+        localStorage.setItem("user_role", response.data.role || "user");
+        localStorage.setItem("user_id", response.data.user_id);
+        localStorage.setItem("user_name", response.data.name || "Pelanggan");
+        navigate("/customer/home");
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail || "Email atau password salah.");
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    setError(err.response?.data?.detail || "Email atau password salah.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#F4F7FB] p-4 font-['Plus_Jakarta_Sans']">
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#F4F7FB] p-4 font-sans">
       {/* Background Ambient Decor */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] -right-[5%] w-[400px] h-[400px] bg-blue-200/30 rounded-full blur-[100px]" />
@@ -90,7 +93,9 @@ const handleSubmit = async (e) => {
             <div className="space-y-1.5">
               <div className="flex justify-between items-center px-2">
                 <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.1em]">Password</label>
-                <a href="#" className="text-xs font-bold text-slate-400 hover:text-blue-600 transition-colors">Lupa?</a>
+                <span className="text-xs font-bold text-slate-400">
+                  Bantuan admin
+                </span>
               </div>
               <div className="relative group">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={19} />
@@ -98,7 +103,7 @@ const handleSubmit = async (e) => {
                   type="password"
                   name="password"
                   required
-                  placeholder="••••••••"
+                  placeholder="Password akun"
                   className="w-full pl-12 pr-4 py-4 bg-slate-100/50 border-2 border-transparent focus:border-blue-500/20 focus:bg-white focus:ring-4 focus:ring-blue-500/5 outline-none rounded-[1.25rem] text-sm font-semibold text-slate-800 transition-all"
                   onChange={handleChange}
                 />
@@ -134,7 +139,7 @@ const handleSubmit = async (e) => {
         {/* Footer Note */}
         <div className="mt-8 flex items-center justify-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
           <div className="flex items-center gap-1">
-            <CheckCircle2 size={12} /> Secure Server
+            <CheckCircle2 size={12} /> Server Aman
           </div>
           <div className="w-1 h-1 bg-slate-300 rounded-full" />
           <div>Terenkripsi</div>
