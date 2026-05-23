@@ -21,8 +21,8 @@ const createCourierIcon = () =>
     className: "bg-transparent border-none",
     html: `
       <div class="relative flex h-12 w-12 items-center justify-center -ml-2 -mt-2">
-        <div class="absolute inset-1 rounded-full bg-blue-500/40 animate-ping"></div>
-        <div class="relative z-10 flex h-9 w-9 items-center justify-center rounded-2xl border-2 border-white bg-blue-600 shadow-xl">
+        <div class="absolute inset-1 rounded-full bg-emerald-500/40 animate-ping"></div>
+        <div class="relative z-10 flex h-9 w-9 items-center justify-center rounded-2xl border-2 border-white bg-emerald-600 shadow-xl">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="rotate-45">
             <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
           </svg>
@@ -232,7 +232,7 @@ const CustomerTracking = () => {
           >
             <Popup>
               {courierPosition.fromGps
-                ? order?.courier?.name || "Kurir Stich"
+                ? order?.courier?.name || "Kurir Catering Sehat"
                 : "Kurir mulai dari dapur"}
             </Popup>
           </Marker>
@@ -243,11 +243,11 @@ const CustomerTracking = () => {
       <div className="absolute bottom-8 left-1/2 z-[1000] w-[90%] max-w-md -translate-x-1/2">
         <div className="rounded-[2rem] border border-white bg-white/90 p-6 shadow-[0_20px_50px_rgba(0,0,0,0.1)] backdrop-blur-2xl">
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white bg-blue-50 font-black text-blue-600 shadow-sm">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white bg-emerald-50 font-black text-emerald-600 shadow-sm">
               {order?.courier?.name?.charAt(0) || "K"}
             </div>
             <div className="flex-1">
-              <p className="mb-0.5 text-[10px] font-black uppercase tracking-widest text-blue-600">
+              <p className="mb-0.5 text-[10px] font-black uppercase tracking-widest text-emerald-600">
                 {loading
                   ? "Memuat Tracking"
                   : order?.status === "selesai"
@@ -263,14 +263,14 @@ const CustomerTracking = () => {
                 </p>
               )}
             </div>
-            <button className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-600 transition-all hover:bg-slate-100 hover:text-blue-600 active:scale-90">
+            <button className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-600 transition-all hover:bg-slate-100 hover:text-emerald-600 active:scale-90">
               <Phone size={20} />
             </button>
           </div>
 
           <div className="mt-6 grid gap-3 border-t border-slate-100 pt-5">
             <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
-              <Navigation size={16} className="text-blue-500" />
+              <Navigation size={16} className="text-emerald-500" />
               <span>
                 Status:{" "}
                 <span className="font-bold capitalize text-slate-900">
@@ -287,7 +287,7 @@ const CustomerTracking = () => {
               </span>
             </div>
             <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600">
-              <Clock size={16} className="text-blue-500" />
+              <Clock size={16} className="text-emerald-500" />
               <span>
                 Lokasi update:{" "}
                 <span className="font-bold text-slate-900">

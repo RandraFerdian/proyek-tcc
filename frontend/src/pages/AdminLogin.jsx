@@ -63,7 +63,7 @@ const AdminLogin = () => {
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 relative overflow-hidden font-sans">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-32 -right-32 w-[400px] h-[400px] bg-blue-100/30 rounded-full blur-[100px]" />
+        <div className="absolute -top-32 -right-32 w-[400px] h-[400px] bg-emerald-100/30 rounded-full blur-[100px]" />
         <div className="absolute -bottom-32 -left-32 w-[300px] h-[300px] bg-indigo-100/30 rounded-full blur-[100px]" />
       </div>
 
@@ -80,9 +80,9 @@ const AdminLogin = () => {
 
       <div className="relative z-10 max-w-md w-full mx-4">
         <div className="bg-white rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
-          <div className="pt-12 pb-6 px-8 text-center bg-gradient-to-b from-blue-50/60 to-transparent">
-            <div className="w-16 h-16 bg-blue-50 ring-1 ring-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
-              <ShieldCheck size={32} className="text-blue-600" />
+          <div className="pt-12 pb-6 px-8 text-center bg-gradient-to-b from-emerald-50/80 to-transparent">
+            <div className="w-16 h-16 bg-emerald-50 ring-1 ring-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+              <ShieldCheck size={32} className="text-emerald-600" />
             </div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">
               {isRegister ? "Daftar Admin" : "Admin Panel"}
@@ -93,9 +93,9 @@ const AdminLogin = () => {
                 : "Akses kontrol penuh sistem"}
             </p>
 
-            <div className="inline-flex items-center gap-1.5 mt-4 px-4 py-1.5 bg-blue-50 border border-blue-100 rounded-full">
-              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">
+            <div className="inline-flex items-center gap-1.5 mt-4 px-4 py-1.5 bg-emerald-50 border border-emerald-100 rounded-full">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
                 Admin Portal
               </span>
             </div>
@@ -122,7 +122,7 @@ const AdminLogin = () => {
                 <div className="relative group">
                   <User
                     size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors"
                   />
                   <input
                     type="text"
@@ -130,7 +130,7 @@ const AdminLogin = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Nama Administrator"
-                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-700"
+                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-400 text-slate-700"
                   />
                 </div>
               </div>
@@ -143,15 +143,15 @@ const AdminLogin = () => {
               <div className="relative group">
                 <Mail
                   size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors"
                 />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@katering-stich.com"
-                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-700"
+                    placeholder="admin@cateringsehat.id"
+                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-400 text-slate-700"
                 />
               </div>
             </div>
@@ -163,7 +163,7 @@ const AdminLogin = () => {
               <div className="relative group">
                 <Lock
                   size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors"
                 />
                 <input
                   type="password"
@@ -171,7 +171,7 @@ const AdminLogin = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 text-slate-700"
+                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-400 text-slate-700"
                 />
               </div>
             </div>
@@ -179,7 +179,7 @@ const AdminLogin = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-blue-600 text-white font-black rounded-2xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center justify-center gap-2 group active:scale-[0.98] disabled:opacity-70"
+              className="w-full py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 group active:scale-[0.98] disabled:opacity-70"
             >
               {loading
                 ? "Menghubungkan..."
@@ -204,7 +204,7 @@ const AdminLogin = () => {
                     setIsRegister(!isRegister);
                     setError("");
                   }}
-                  className="text-blue-600 cursor-pointer font-bold hover:underline"
+                  className="text-emerald-600 cursor-pointer font-bold hover:underline"
                 >
                   {isRegister ? "Login di sini" : "Daftar sekarang"}
                 </span>

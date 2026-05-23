@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+import { getPackageType } from "../constants/packageTypes";
 
 const MyOrders = () => {
   const [rawOrders, setRawOrders] = useState([]);
@@ -82,7 +83,7 @@ const MyOrders = () => {
     switch (status?.toLowerCase()) {
       case "dikirim":
         return {
-          color: "text-blue-600 bg-blue-50 border-blue-100",
+          color: "text-emerald-600 bg-emerald-50 border-emerald-100",
           label: "Dalam Pengiriman",
           icon: <Clock size={12} />,
         };
@@ -121,7 +122,7 @@ const MyOrders = () => {
             Riwayat Pesanan
           </h1>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-            Katering Stich
+            Catering Sehat
           </p>
         </div>
       </nav>
@@ -137,7 +138,7 @@ const MyOrders = () => {
             ))
           ) : groupedOrders.length === 0 ? (
             <div className="py-20 text-center flex flex-col items-center">
-              <div className="w-24 h-24 bg-blue-50 rounded-[2.5rem] flex items-center justify-center text-blue-200 mb-6 border border-blue-100">
+              <div className="w-24 h-24 bg-emerald-50 rounded-[2.5rem] flex items-center justify-center text-emerald-200 mb-6 border border-emerald-100">
                 <ShoppingBag size={48} />
               </div>
               <h2 className="text-2xl font-black text-slate-900 mb-2">
@@ -148,7 +149,7 @@ const MyOrders = () => {
               </p>
               <button
                 onClick={() => navigate("/customer/home")}
-                className="px-8 py-3.5 bg-blue-600 text-white font-bold rounded-2xl shadow-xl shadow-blue-600/20 hover:bg-blue-700 transition-all active:scale-95"
+                className="px-8 py-3.5 bg-emerald-600 text-white font-bold rounded-2xl shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 transition-all active:scale-95"
               >
                 Mulai Pesan Sekarang
               </button>
@@ -196,7 +197,7 @@ const MyOrders = () => {
 
                   <div className="flex gap-5">
                     <div className="flex-1">
-                      <h3 className="text-lg font-black text-slate-950 mb-1 group-hover:text-blue-600 transition-colors">
+                      <h3 className="text-lg font-black text-slate-950 mb-1 group-hover:text-emerald-600 transition-colors">
                         {displayTitle}
                       </h3>
                       <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
@@ -242,7 +243,7 @@ const MyOrders = () => {
           <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.15)] border border-slate-100 max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div>
-                <span className="text-[9px] font-black text-blue-600 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
                   Detail Transaksi
                 </span>
                 <h3 className="text-base font-bold text-slate-900 mt-1.5">
@@ -275,6 +276,7 @@ const MyOrders = () => {
                             "Paket Custom Katering"}
                         </p>
                         <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                          {getPackageType(item.package)} -{" "}
                           {item.quantity} Porsi x Rp{" "}
                           {(
                             item.total_price / (item.quantity || 1)
@@ -290,7 +292,7 @@ const MyOrders = () => {
                     <p className="text-xs font-black text-slate-500 uppercase tracking-widest">
                       Total Keseluruhan
                     </p>
-                    <p className="text-base font-black text-blue-600">
+                    <p className="text-base font-black text-emerald-600">
                       Rp{" "}
                       {selectedGroup.total_transaction_price.toLocaleString(
                         "id-ID",
@@ -305,7 +307,7 @@ const MyOrders = () => {
                   <Calendar size={12} /> Jadwal Antar
                 </h4>
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-sm font-semibold text-slate-700 flex items-center gap-3">
-                  <Clock size={16} className="text-blue-600" />
+                  <Clock size={16} className="text-emerald-600" />
                   {selectedGroup.scheduled_time
                     ? new Date(selectedGroup.scheduled_time).toLocaleString(
                         "id-ID",
@@ -343,7 +345,7 @@ const MyOrders = () => {
                   onClick={() =>
                     navigate(`/tracking/${selectedGroup.items[0].id}`)
                   }
-                  className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
+                  className="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20"
                 >
                   Lacak Pengiriman Kurir <ArrowRight size={18} />
                 </button>

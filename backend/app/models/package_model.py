@@ -10,6 +10,7 @@ class CateringPackage(Base):
     
     # Petakan package_name ke kolom name di DB
     package_name = Column("name", String(150), nullable=False)
+    type = Column(String(50), nullable=False, default="Makanan Berat")
     description = Column(Text, nullable=True)
     price = Column(Float, nullable=True)
     menu_items = Column(Text, nullable=True)

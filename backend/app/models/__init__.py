@@ -5,3 +5,4 @@ from .order_model import Order
 from .route_model import DeliveryRoute
 from .customer_model import Customer
 from .address_model import Address
+from .chat_model import ChatMessage

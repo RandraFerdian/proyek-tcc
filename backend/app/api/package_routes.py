@@ -26,6 +26,7 @@ def update_package(package_id: int, package_data: PackageCreate, db: Session = D
     
     # Update fields
     setattr(package, 'package_name', package_data.package_name)
+    setattr(package, 'type', package_data.type)
     setattr(package, 'description', package_data.description)
     setattr(package, 'price', package_data.price)
     

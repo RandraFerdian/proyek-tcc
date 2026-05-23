@@ -13,11 +13,13 @@ import {
   ShoppingBag,
   Trash2,
   TrendingUp,
+  X,
   Truck,
   Users,
   Wallet,
 } from "lucide-react";
 import api from "../services/api";
+import { getPackageType } from "../constants/packageTypes";
 
 const statusOptions = ["pending", "dikirim", "selesai", "dibatalkan"];
 
@@ -45,7 +47,7 @@ const getStatusMeta = (status = "") => {
     return {
       label: "Dikirim",
       icon: <Truck size={14} />,
-      className: "bg-blue-50 text-blue-700 border-blue-100",
+      className: "bg-emerald-50 text-emerald-700 border-emerald-100",
     };
   }
 
@@ -81,6 +83,7 @@ const Dashboard = () => {
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [updatingId, setUpdatingId] = useState(null);
+  const [selectedGroup, setSelectedGroup] = useState(null);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -131,7 +134,7 @@ const Dashboard = () => {
         value: orders.length,
         helper: `${pending} pesanan menunggu diproses`,
         icon: <ShoppingBag size={22} />,
-        tone: "bg-blue-50 text-blue-700 border-blue-100",
+        tone: "bg-emerald-50 text-emerald-700 border-emerald-100",
       },
       {
         title: "Omzet Selesai",
@@ -177,7 +180,27 @@ const Dashboard = () => {
     });
   }, [orders, searchTerm]);
 
-  const recentOrders = filteredOrders.slice(0, 8);
+  const recentOrders = useMemo(() => {
+    const groups = {};
+    filteredOrders.forEach((order) => {
+      const code = order.order_code || `ORD-${order.id}`;
+      if (!groups[code]) {
+         groups[code] = {
+           order_code: code,
+           customer: order.customer,
+           courier: order.courier,
+           created_at: order.created_at,
+           status: order.status,
+           total_price: 0,
+           items: [],
+           id: order.id,
+         };
+      }
+      groups[code].total_price += Number(order.total_price || 0);
+      groups[code].items.push(order);
+    });
+    return Object.values(groups).sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 8);
+  }, [filteredOrders]);
 
   const quickActions = [
     {
@@ -203,12 +226,13 @@ const Dashboard = () => {
     },
   ];
 
-  const handleStatusChange = async (orderId, status) => {
+  const handleStatusChange = async (group, status) => {
+    if (!window.confirm(`Ubah status seluruh pesanan ${group.order_code} menjadi ${status}?`)) return;
     try {
-      setUpdatingId(orderId);
-      const response = await api.put(`/orders/${orderId}/status`, { status });
+      setUpdatingId(group.order_code);
+      await Promise.all(group.items.map(item => api.put(`/orders/${item.id}/status`, { status })));
       setOrders((current) =>
-        current.map((order) => (order.id === orderId ? response.data : order)),
+        current.map((order) => group.items.find(i => i.id === order.id) ? { ...order, status } : order)
       );
     } catch (err) {
       console.error("Error updating order status:", err);
@@ -218,13 +242,12 @@ const Dashboard = () => {
     }
   };
 
-  const handleDelete = async (orderId) => {
-    if (!window.confirm("Hapus pesanan ini dari dashboard admin?")) return;
-
+  const handleDelete = async (group) => {
+    if (!window.confirm(`Hapus seluruh pesanan ${group.order_code} dari dashboard admin?`)) return;
     try {
-      setUpdatingId(orderId);
-      await api.delete(`/orders/${orderId}`);
-      setOrders((current) => current.filter((order) => order.id !== orderId));
+      setUpdatingId(group.order_code);
+      await Promise.all(group.items.map(item => api.delete(`/orders/${item.id}`)));
+      setOrders((current) => current.filter((order) => !group.items.find(i => i.id === order.id)));
     } catch (err) {
       console.error("Error deleting order:", err);
       setError(err.response?.data?.detail || "Gagal menghapus pesanan.");
@@ -238,12 +261,12 @@ const Dashboard = () => {
       <div className="mx-auto max-w-7xl px-5 pb-28 pt-6 md:px-8 md:pb-32 md:pt-8">
         <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-blue-700">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-emerald-700">
               <TrendingUp size={14} />
               Admin Home
             </div>
             <h1 className="text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-              Pusat Kontrol Katering Stich
+              Pusat Kontrol Catering Sehat
             </h1>
             <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-500">
               Pantau pesanan, omzet, kurir, menu katering, dan pengiriman dari satu dashboard.
@@ -261,7 +284,7 @@ const Dashboard = () => {
             </button>
             <button
               onClick={() => navigate("/admin/packages")}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-colors hover:bg-blue-700"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition-colors hover:bg-emerald-700"
             >
               <PackagePlus size={18} />
               Tambah Paket
@@ -300,10 +323,10 @@ const Dashboard = () => {
             <button
               key={action.title}
               onClick={() => navigate(action.path)}
-              className={`group flex min-h-[116px] items-center justify-between rounded-2xl border border-slate-100 p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-100 hover:shadow-md ${action.className}`}
+              className={`group flex min-h-[116px] items-center justify-between rounded-2xl border border-slate-100 p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-100 hover:shadow-md ${action.className}`}
             >
               <div className="flex items-center gap-4">
-                <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-slate-700 group-hover:bg-blue-50 group-hover:text-blue-700">
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-slate-700 group-hover:bg-emerald-50 group-hover:text-emerald-700">
                   {action.icon}
                 </div>
                 <div>
@@ -311,7 +334,7 @@ const Dashboard = () => {
                   <p className="mt-1 text-sm font-medium text-slate-500">{action.body}</p>
                 </div>
               </div>
-              <ArrowRight size={18} className="text-slate-300 group-hover:text-blue-600" />
+              <ArrowRight size={18} className="text-slate-300 group-hover:text-emerald-600" />
             </button>
           ))}
         </section>
@@ -330,7 +353,7 @@ const Dashboard = () => {
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Cari pesanan, pelanggan, paket..."
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-500/10"
               />
             </div>
           </div>
@@ -370,45 +393,45 @@ const Dashboard = () => {
                     </td>
                   </tr>
                 ) : (
-                  recentOrders.map((order) => {
-                    const status = getStatusMeta(order.status);
+                  recentOrders.map((group) => {
+                    const status = getStatusMeta(group.status);
 
                     return (
-                      <tr key={order.id} className="transition-colors hover:bg-slate-50/70">
+                      <tr key={group.order_code} className="transition-colors hover:bg-slate-50/70">
                         <td className="px-5 py-4">
                           <p className="font-black text-slate-800">
-                            {order.order_code || `ORD-${String(order.id).padStart(4, "0")}`}
+                            {group.order_code}
                           </p>
                           <p className="mt-1 text-xs font-semibold text-slate-400">
-                            {formatDate(order.created_at)}
+                            {formatDate(group.created_at)}
                           </p>
                         </td>
                         <td className="px-5 py-4">
                           <p className="font-bold text-slate-700">
-                            {order.customer?.name || `Pelanggan #${order.customer_id || "-"}`}
+                            {group.customer?.name || "Pelanggan"}
                           </p>
                           <p className="mt-1 text-xs font-semibold text-slate-400">
-                            {order.customer?.company || order.customer?.phone || "Customer"}
+                            {group.customer?.company || group.customer?.phone || "Customer"}
                           </p>
                         </td>
                         <td className="px-5 py-4">
                           <p className="font-bold text-slate-700">
-                            {order.package?.package_name || order.package?.name || `Paket #${order.package_id || "-"}`}
+                            {group.items.length} Menu
                           </p>
-                          <p className="mt-1 text-xs font-semibold text-slate-400">
-                            Qty {order.quantity || 1}
-                          </p>
+                          <button onClick={() => setSelectedGroup(group)} className="mt-1 text-[11px] font-bold text-emerald-600 hover:underline">
+                            Lihat Detail
+                          </button>
                         </td>
                         <td className="px-5 py-4">
                           <p className="font-bold text-slate-700">
-                            {order.courier?.name || "Belum ditugaskan"}
+                            {group.courier?.name || "Belum ditugaskan"}
                           </p>
                           <p className="mt-1 text-xs font-semibold text-slate-400">
-                            {order.courier?.vehicle_plate || "Kurir opsional"}
+                            {group.courier?.vehicle_plate || "Kurir opsional"}
                           </p>
                         </td>
                         <td className="px-5 py-4 font-black text-slate-800">
-                          {formatCurrency(order.total_price)}
+                          {formatCurrency(group.total_price)}
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-2">
@@ -417,10 +440,10 @@ const Dashboard = () => {
                               {status.label}
                             </span>
                             <select
-                              value={order.status || "pending"}
-                              onChange={(event) => handleStatusChange(order.id, event.target.value)}
-                              disabled={updatingId === order.id}
-                              className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-600 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 disabled:opacity-50"
+                              value={group.status || "pending"}
+                              onChange={(event) => handleStatusChange(group, event.target.value)}
+                              disabled={updatingId === group.order_code}
+                              className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-600 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/10 disabled:opacity-50"
                             >
                               {statusOptions.map((option) => (
                                 <option key={option} value={option}>
@@ -431,14 +454,23 @@ const Dashboard = () => {
                           </div>
                         </td>
                         <td className="px-5 py-4 text-right">
-                          <button
-                            onClick={() => handleDelete(order.id)}
-                            disabled={updatingId === order.id}
-                            className="inline-flex items-center justify-center rounded-lg p-2 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
-                            title="Hapus pesanan"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => setSelectedGroup(group)}
+                              className="inline-flex items-center justify-center rounded-lg p-2 text-emerald-600 transition hover:bg-emerald-50"
+                              title="Lihat Detail"
+                            >
+                              <ShoppingBag size={18} />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(group)}
+                              disabled={updatingId === group.order_code}
+                              className="inline-flex items-center justify-center rounded-lg p-2 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
+                              title="Hapus pesanan"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -449,8 +481,79 @@ const Dashboard = () => {
           </div>
         </section>
       </div>
+
+      {/* --- DETAIL POPUP MODAL --- */}
+      {selectedGroup && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-2xl rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-start">
+              <div>
+                <h3 className="text-xl font-black text-slate-900">
+                  Detail Pesanan {selectedGroup.order_code}
+                </h3>
+                <p className="text-sm font-medium text-slate-500 mt-1">
+                  Pemesan: {selectedGroup.customer?.name} | Total: {formatCurrency(selectedGroup.total_price)}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedGroup(null)}
+                className="p-2 text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1 bg-slate-50">
+              <div className="space-y-3">
+                {selectedGroup.items.map((item, idx) => (
+                  <div key={item.id} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <div className="px-2 py-0.5 bg-slate-50 border border-slate-100 text-slate-500 rounded-full text-[10px] font-bold tracking-wide inline-block mb-2">
+                          Item #{idx + 1} (ID: {item.id})
+                        </div>
+                        <h4 className="font-bold text-slate-800 text-base">
+                          {item.package?.package_name || item.package?.name || "Paket Katering"}
+                        </h4>
+                      </div>
+                      <span className="font-black text-emerald-600 text-base whitespace-nowrap ml-3">
+                        {formatCurrency(item.total_price)}
+                      </span>
+                    </div>
+                    
+                    <div className="flex gap-4 text-sm text-slate-600 mt-3 border-t border-slate-50 pt-3">
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Kuantitas</span>
+                        <span className="font-semibold">{item.quantity} Porsi</span>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Tipe Paket</span>
+                        <span className="font-semibold">{getPackageType(item.package)}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Catatan</span>
+                        <span className="font-semibold italic">{item.notes || "-"}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-6 bg-white border-t border-slate-100 flex justify-end">
+              <button
+                onClick={() => setSelectedGroup(null)}
+                className="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors"
+              >
+                Tutup Detail
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default Dashboard;
+

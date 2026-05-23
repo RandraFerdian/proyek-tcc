@@ -40,7 +40,6 @@ class OrderCourierAssign(BaseModel):
 def get_courier_location(order: Order, db: Session):
     if not order.courier_id:
         return None
-
     route = (
         db.query(DeliveryRoute)
         .filter(DeliveryRoute.courier_id == order.courier_id)
@@ -84,6 +83,7 @@ def serialize_order(order: Order, db: Session):
             "id": package_data.id,
             "package_name": package_data.package_name,
             "name": package_data.package_name,
+            "type": package_data.type,
             "price": package_data.price,
             "description": package_data.description,
             "menu_items": package_data.menu_items,
@@ -165,6 +165,7 @@ def get_my_orders(db: Session = Depends(get_db), current_user = Depends(get_curr
             package_dict = {
                 "id": package_data.id,
                 "name": package_data.package_name,  # Ambil dari attribute package_name
+                "type": package_data.type,
                 "price": package_data.price,
                 "description": package_data.description,
                 "menu_items": package_data.menu_items
@@ -184,7 +185,8 @@ def get_my_orders(db: Session = Depends(get_db), current_user = Depends(get_curr
             "lng": address.lng if address else None,
             "street": address.street if address else None,
             "notes": order.notes if hasattr(order, 'notes') else "",
-            "scheduled_time": order.scheduled_time if hasattr(order, 'scheduled_time') else ""
+            "scheduled_time": order.scheduled_time if hasattr(order, 'scheduled_time') else "",
+            "courier_location": get_courier_location(order, db)
         }
         result.append(order_data)
     
@@ -224,8 +226,6 @@ def assign_order_courier(order_id: int, payload: OrderCourierAssign, db: Session
         raise HTTPException(status_code=409, detail="Pesanan sudah diambil kurir lain.")
 
     order.courier_id = payload.courier_id
-    if not order.status or order.status.lower() == "pending":
-        order.status = "dikirim"
     db.commit()
     db.refresh(order)
     return serialize_order(order, db)

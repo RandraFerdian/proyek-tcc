@@ -8,13 +8,20 @@ export default {
       },
       colors: {
         brand: {
+          25: "#fbfef8",
           50: "#f0fdf4",
-          500: "#22c55e", // Warna hijau aksen (bisa kamu ganti sesuai tema Stich)
+          100: "#dcfce7",
+          200: "#bbf7d0",
+          500: "#22c55e",
           600: "#16a34a",
+          700: "#15803d",
+          leaf: "#2f6f4e",
+          citrus: "#d9f99d",
+          cream: "#fffdf4",
         },
       },
       boxShadow: {
-        floating: "0 10px 40px -10px rgba(0,0,0,0.08)", // Shadow super halus untuk floating card
+        floating: "0 10px 40px -10px rgba(22,101,52,0.12)",
       },
     },
   },

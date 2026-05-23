@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { Package, Plus, Edit2, Trash2, X } from "lucide-react";
 import api from "../services/api";
+import { PACKAGE_TYPES, getPackageType } from "../constants/packageTypes";
 
 const Packages = () => {
   const [packages, setPackages] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     package_name: "",
+    type: PACKAGE_TYPES[0],
     description: "",
     price: "",
   });
@@ -40,7 +42,7 @@ const Packages = () => {
         await api.post("/packages/", formData);
       }
       setIsModalOpen(false);
-      setFormData({ package_name: "", description: "", price: "" });
+      setFormData({ package_name: "", type: PACKAGE_TYPES[0], description: "", price: "" });
       setEditingId(null);
       fetchPackages();
     } catch (error) {
@@ -51,6 +53,7 @@ const Packages = () => {
   const handleEdit = (pkg) => {
     setFormData({
       package_name: pkg.package_name,
+      type: getPackageType(pkg),
       description: pkg.description,
       price: pkg.price,
     });
@@ -82,11 +85,11 @@ const Packages = () => {
         </div>
         <button
           onClick={() => {
-            setFormData({ package_name: "", description: "", price: "" });
+            setFormData({ package_name: "", type: PACKAGE_TYPES[0], description: "", price: "" });
             setEditingId(null);
             setIsModalOpen(true);
           }}
-          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-600/20 active:scale-95"
+          className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all shadow-md shadow-emerald-600/20 active:scale-95"
         >
           <Plus size={18} strokeWidth={2.5} /> Tambah Paket
         </button>
@@ -99,6 +102,7 @@ const Packages = () => {
               <tr className="bg-slate-50/50 text-slate-500 text-sm border-b border-slate-100">
                 <th className="py-4 px-6 font-semibold tracking-wide">ID</th>
                 <th className="py-4 px-6 font-semibold tracking-wide">Nama Paket</th>
+                <th className="py-4 px-6 font-semibold tracking-wide">Tipe</th>
                 <th className="py-4 px-6 font-semibold tracking-wide">Deskripsi</th>
                 <th className="py-4 px-6 font-semibold tracking-wide">Harga</th>
                 <th className="py-4 px-6 font-semibold text-right tracking-wide">Aksi</th>
@@ -110,11 +114,16 @@ const Packages = () => {
                   <td className="py-4 px-6 font-bold text-slate-700">#{pkg.id}</td>
                   <td className="py-4 px-6 text-slate-600 font-medium">
                     <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-blue-50 text-blue-600 rounded-md">
+                      <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-md">
                         <Package size={16} />
                       </div>
                       {pkg.package_name}
                     </div>
+                  </td>
+                  <td className="py-4 px-6">
+                    <span className="inline-flex rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                      {getPackageType(pkg)}
+                    </span>
                   </td>
                   <td className="py-4 px-6 text-slate-500 max-w-xs truncate">{pkg.description}</td>
                   <td className="py-4 px-6 font-semibold text-emerald-600">
@@ -124,7 +133,7 @@ const Packages = () => {
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => handleEdit(pkg)}
-                        className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-2 text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors"
                       >
                         <Edit2 size={18} />
                       </button>
@@ -140,7 +149,7 @@ const Packages = () => {
               ))}
               {packages.length === 0 && (
                 <tr>
-                  <td colSpan="5" className="py-8 text-center text-slate-500">
+                  <td colSpan="6" className="py-8 text-center text-slate-500">
                     Belum ada data paket.
                   </td>
                 </tr>
@@ -175,9 +184,26 @@ const Packages = () => {
                   value={formData.package_name}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
                   placeholder="Contoh: Paket Premium"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Tipe Menu
+                </label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+                >
+                  {PACKAGE_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">
@@ -189,7 +215,7 @@ const Packages = () => {
                   onChange={handleInputChange}
                   required
                   rows="3"
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none"
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all resize-none"
                   placeholder="Deskripsi singkat..."
                 />
               </div>
@@ -203,7 +229,7 @@ const Packages = () => {
                   value={formData.price}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
                   placeholder="0"
                 />
               </div>
@@ -217,7 +243,7 @@ const Packages = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 px-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-600/20 active:scale-95"
+                  className="flex-1 py-2.5 px-4 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all shadow-md shadow-emerald-600/20 active:scale-95"
                 >
                   Simpan
                 </button>

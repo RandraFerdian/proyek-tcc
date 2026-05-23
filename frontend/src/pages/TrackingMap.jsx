@@ -80,8 +80,8 @@ const getStatusMeta = (status) => {
           strokeWidth={2.5}
         />
       ),
-      badge: "bg-blue-50 text-blue-700 border-blue-100",
-      marker: "bg-blue-600",
+      badge: "bg-emerald-50 text-emerald-700 border-emerald-100",
+      marker: "bg-emerald-600",
     };
   if (isFinished(status))
     return {
@@ -112,58 +112,43 @@ const getStatusMeta = (status) => {
   };
 };
 
-const createCustomIcon = (status) => {
-  const meta = getStatusMeta(status);
-  const pingEffect = isInDelivery(status) ? (
-    <div className="absolute -inset-2 rounded-full bg-blue-500/20 animate-ping" />
-  ) : null;
-  const iconMarkup = renderToStaticMarkup(
-    <div className="relative cursor-pointer">
-      {pingEffect}
-      <div
-        className={`${meta.marker} relative z-10 flex items-center justify-center rounded-full border-[3px] border-white p-2.5 shadow-lg`}
-      >
-        {meta.markerIcon}
-      </div>
-    </div>,
-  );
-  return divIcon({
-    html: iconMarkup,
-    className: "custom-leaflet-icon",
-    iconSize: [40, 40],
-    iconAnchor: [20, 40],
-    popupAnchor: [0, -40],
-  });
-};
 
-const createKitchenIcon = () =>
-  divIcon({
-    html: renderToStaticMarkup(
-      <div className="relative cursor-pointer">
-        <div className="relative z-10 flex items-center justify-center rounded-full border-[3px] border-white bg-slate-900 p-2.5 shadow-lg">
-          <MapPin size={19} className="text-white" strokeWidth={2.8} />
-        </div>
-      </div>,
-    ),
-    className: "custom-leaflet-icon",
-    iconSize: [40, 40],
-    iconAnchor: [20, 40],
-    popupAnchor: [0, -40],
-  });
+const kitchenIcon = divIcon({
+  className: "custom-icon",
+  html: `<div class="bg-amber-500 w-10 h-10 flex items-center justify-center rounded-full shadow-lg border-[2.5px] border-white text-white text-lg">🍳</div>`,
+  iconSize: [40, 40],
+  iconAnchor: [20, 20],
+  popupAnchor: [0, -15],
+});
 
+const destinationIcon = divIcon({
+  className: "custom-icon",
+  html: `<div class="bg-rose-500 w-10 h-10 flex items-center justify-center rounded-full shadow-lg border-[2.5px] border-white text-white text-lg">📍</div>`,
+  iconSize: [40, 40],
+  iconAnchor: [20, 20],
+  popupAnchor: [0, -15],
+});
+
+const courierIcon = divIcon({
+  className: "custom-icon",
+  html: `<div class="relative flex items-center justify-center">
+        <div class="absolute w-12 h-12 bg-emerald-500/30 rounded-full animate-ping"></div>
+        <div class="bg-emerald-500 w-10 h-10 flex items-center justify-center rounded-full shadow-lg border-[2.5px] border-white relative z-10 text-white text-lg">🛵</div>
+      </div>`,
+  iconSize: [40, 40],
+  iconAnchor: [20, 20],
+  popupAnchor: [0, -15],
+});
 // --- KOMPONEN PEMBANTU BARU UNTUK RUTE JALAN RAYA OSRM ---
-const RoutePolyline = ({ startPos, endPos, isFromGps }) => {
+const RoutePolyline = ({ waypoints, color = "#2563eb", weight = 4, dashArray, className }) => {
   const [path, setPath] = useState([]);
-  const startLat = startPos[0];
-  const startLng = startPos[1];
-  const endLat = endPos[0];
-  const endLng = endPos[1];
 
   useEffect(() => {
     const fetchRoute = async () => {
       try {
+        const coordsString = waypoints.map(p => `${p[1]},${p[0]}`).join(';');
         const response = await fetch(
-          `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`,
+          `https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`,
         );
         const data = await response.json();
         if (data.routes && data.routes.length > 0) {
@@ -173,32 +158,23 @@ const RoutePolyline = ({ startPos, endPos, isFromGps }) => {
           ]);
           setPath(coords);
         } else {
-          setPath([
-            [startLat, startLng],
-            [endLat, endLng],
-          ]); // Fallback
+          setPath(waypoints);
         }
       } catch {
-        setPath([
-          [startLat, startLng],
-          [endLat, endLng],
-        ]); // Fallback
+        setPath(waypoints);
       }
     };
-    fetchRoute();
-  }, [startLat, startLng, endLat, endLng]);
+    if (waypoints && waypoints.length >= 2) {
+      fetchRoute();
+    }
+  }, [JSON.stringify(waypoints)]);
 
   if (path.length < 2) return null;
   return (
     <Polyline
       positions={path}
-      pathOptions={{
-        color: "#2563eb",
-        weight: 4,
-        opacity: 0.65,
-        dashArray: isFromGps ? undefined : "10 12",
-      }}
-      className="animate-pulse"
+      pathOptions={{ color, weight, opacity: 0.8, dashArray }}
+      className={className}
     />
   );
 };
@@ -248,10 +224,9 @@ const TrackingMap = () => {
     navigate(role === "admin" ? "/admin/login" : "/customer/login");
   };
 
-  const filteredOrders = useMemo(() => {
+  const filteredGroups = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
-    if (!query) return orders;
-    return orders.filter((order) => {
+    const matches = query ? orders.filter((order) => {
       const fields = [
         getOrderCode(order),
         String(order.id),
@@ -266,21 +241,35 @@ const TrackingMap = () => {
           .toLowerCase()
           .includes(query),
       );
+    }) : orders;
+
+    const grouped = {};
+    matches.forEach(order => {
+      const code = getOrderCode(order);
+      if (!grouped[code]) {
+        grouped[code] = {
+          ...order,
+          allPackages: [`${getPackageName(order)} (x${order.quantity || 1})`]
+        };
+      } else {
+        grouped[code].allPackages.push(`${getPackageName(order)} (x${order.quantity || 1})`);
+      }
     });
+    return Object.values(grouped);
   }, [orders, searchTerm]);
 
-  const mappedOrders = filteredOrders.filter((order) =>
-    getOrderMarkerPosition(order),
+  const mappedGroups = filteredGroups.filter((group) =>
+    getOrderMarkerPosition(group),
   );
-  const withoutCoordinateCount = filteredOrders.filter(
-    (order) => !hasDatabaseCoordinate(order),
+  const withoutCoordinateCount = filteredGroups.filter(
+    (group) => !hasDatabaseCoordinate(group),
   ).length;
-  const inTransitCount = orders.filter((order) =>
-    isInDelivery(order.status),
+  const inTransitCount = filteredGroups.filter((group) =>
+    isInDelivery(group.status),
   ).length;
 
-  const mapCenter = mappedOrders.length
-    ? getOrderMarkerPosition(mappedOrders[0])
+  const mapCenter = mappedGroups.length
+    ? getOrderMarkerPosition(mappedGroups[0])
     : basePosition;
 
   return (
@@ -297,7 +286,7 @@ const TrackingMap = () => {
 
       <MapContainer
         center={mapCenter}
-        zoom={mappedOrders.length ? 14 : 13}
+        zoom={mappedGroups.length ? 14 : 13}
         zoomControl={false}
         className="z-0 h-full w-full"
       >
@@ -307,35 +296,33 @@ const TrackingMap = () => {
         />
         <ZoomControl position="bottomright" />
 
-        <Marker
+                <Marker
           position={[KITCHEN_LOCATION.lat, KITCHEN_LOCATION.lng]}
-          icon={createKitchenIcon()}
+          icon={kitchenIcon}
         >
-          <Popup>{KITCHEN_LOCATION.name}</Popup>
+          <Popup className="clean-popup">
+            <div className="p-1 text-center font-bold text-slate-700">Dapur Catering</div>
+          </Popup>
         </Marker>
 
-        {mappedOrders.map((order) => {
-          const markerPos = getOrderMarkerPosition(order);
-          const status = getStatusMeta(order.status);
-          const destination = hasDatabaseCoordinate(order)
-            ? [Number(order.lat), Number(order.lng)]
-            : null;
+        {mappedGroups.map((group) => {
+          const status = getStatusMeta(group.status);
+          const isDelivering = isInDelivery(group.status);
+          
+          const destLat = parseFloat(group.lat);
+          const destLng = parseFloat(group.lng);
+          if (isNaN(destLat) || isNaN(destLng)) return null;
+
+          const kitchenLat = KITCHEN_LOCATION.lat;
+          const kitchenLng = KITCHEN_LOCATION.lng;
+
+          const courierLat = group.courier_location?.lat ? parseFloat(group.courier_location.lat) : null;
+          const courierLng = group.courier_location?.lng ? parseFloat(group.courier_location.lng) : null;
 
           return (
-            <Fragment key={`delivery-${order.id}`}>
-              {/* PAKAI KOMPONEN RUTE OSRM */}
-              {isInDelivery(order.status) && destination && (
-                <RoutePolyline
-                  startPos={markerPos}
-                  endPos={destination}
-                  isFromGps={hasCourierCoordinate(order)}
-                />
-              )}
-
-              <Marker
-                position={markerPos}
-                icon={createCustomIcon(order.status)}
-              >
+            <Fragment key={`delivery-${group.id}`}>
+              {/* Titik Diantar (Destinasi) */}
+              <Marker position={[destLat, destLng]} icon={destinationIcon}>
                 <Popup className="rounded-xl border-0 font-sans shadow-lg">
                   <div className="min-w-[210px] p-1">
                     <div
@@ -345,22 +332,57 @@ const TrackingMap = () => {
                       {status.label}
                     </div>
                     <h3 className="text-sm font-black text-slate-800">
-                      {getOrderCode(order)}
+                      {getOrderCode(group)}
                     </h3>
-                    <p className="mt-1 text-xs font-semibold text-slate-600">
-                      {getPackageName(order)}
+                    <p className="mt-1 text-xs font-semibold text-slate-600 leading-tight">
+                      {group.allPackages.join(" + ")}
                     </p>
                     <p className="mt-2 text-xs text-slate-500">
-                      {getCustomerName(order)}
+                      {getCustomerName(group)}
                     </p>
                     <p className="mt-2 text-xs leading-relaxed text-slate-500">
-                      {isInDelivery(order.status) && hasCourierCoordinate(order)
-                        ? "Marker menunjukkan posisi kurir terbaru"
-                        : getAddressText(order)}
+                      {getAddressText(group)}
                     </p>
                   </div>
                 </Popup>
               </Marker>
+
+              {/* Logika Tampilan Berdasarkan Status */}
+              {isDelivering && courierLat && courierLng ? (
+                <>
+                  <Marker position={[courierLat, courierLng]} icon={courierIcon}>
+                    <Popup className="rounded-xl border-0 font-sans shadow-lg">
+                      <div className="min-w-[210px] p-1 text-center">
+                        <div className="mb-2 inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border-emerald-100">
+                          🛵 Kurir
+                        </div>
+                        <h3 className="text-sm font-black text-slate-800">
+                          {group.courier?.name || "Kurir"}
+                        </h3>
+                        <p className="mt-1 text-xs font-semibold text-emerald-600 leading-tight">
+                          Sedang Mengantar Pesanan
+                        </p>
+                        <p className="mt-2 text-xs text-slate-500 font-bold">
+                          {getOrderCode(group)}
+                        </p>
+                      </div>
+                    </Popup>
+                  </Marker>
+                  <RoutePolyline
+                    waypoints={[ [kitchenLat, kitchenLng], [courierLat, courierLng], [destLat, destLng] ]}
+                    color="#10b981"
+                    className="animate-pulse"
+                  />
+                </>
+              ) : (
+                <>
+                  <RoutePolyline
+                    waypoints={[ [kitchenLat, kitchenLng], [destLat, destLng] ]}
+                    color="#94a3b8"
+                    dashArray="5, 10"
+                  />
+                </>
+              )}
             </Fragment>
           );
         })}
@@ -377,10 +399,10 @@ const TrackingMap = () => {
               <p className="mt-1 text-sm font-semibold text-slate-500">
                 {loading
                   ? "Memuat data database..."
-                  : `${mappedOrders.length} lokasi tampil di peta`}
+                  : `${mappedGroups.length} lokasi tampil di peta`}
               </p>
             </div>
-            <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-blue-700">
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-emerald-700">
               <Truck size={22} />
             </div>
           </div>
@@ -388,17 +410,17 @@ const TrackingMap = () => {
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
             <div className="rounded-xl border border-slate-100 bg-white px-3 py-2">
               <p className="text-lg font-black text-slate-900">
-                {orders.length}
+                {filteredGroups.length}
               </p>
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Order
               </p>
             </div>
-            <div className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">
-              <p className="text-lg font-black text-blue-700">
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2">
+              <p className="text-lg font-black text-emerald-700">
                 {inTransitCount}
               </p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-blue-500">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-500">
                 Dikirim
               </p>
             </div>
@@ -444,7 +466,7 @@ const TrackingMap = () => {
               placeholder="Cari order, pelanggan, paket, alamat..."
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm font-semibold text-slate-700 shadow-sm outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+              className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm font-semibold text-slate-700 shadow-sm outline-none transition-all placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
             />
             <Search
               size={18}
@@ -454,18 +476,18 @@ const TrackingMap = () => {
         </div>
 
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
-          {filteredOrders.length === 0 && !loading && (
+          {filteredGroups.length === 0 && !loading && (
             <div className="rounded-2xl border border-slate-100 bg-white p-5 text-center text-sm font-semibold text-slate-500">
               Tidak ada pesanan ditemukan.
             </div>
           )}
-          {filteredOrders.map((order) => {
-            const status = getStatusMeta(order.status);
-            const hasCoordinate = hasDatabaseCoordinate(order);
+          {filteredGroups.map((group) => {
+            const status = getStatusMeta(group.status);
+            const hasCoordinate = hasDatabaseCoordinate(group);
             return (
               <div
-                key={order.id}
-                className={`rounded-2xl border p-4 transition-all ${hasCoordinate ? "border-slate-100 bg-white shadow-sm hover:border-blue-100 hover:shadow-md" : "border-amber-100 bg-amber-50/60"}`}
+                key={group.id}
+                className={`rounded-2xl border p-4 transition-all ${hasCoordinate ? "border-slate-100 bg-white shadow-sm hover:border-emerald-100 hover:shadow-md" : "border-amber-100 bg-amber-50/60"}`}
               >
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <span
@@ -475,11 +497,11 @@ const TrackingMap = () => {
                     {status.label}
                   </span>
                   <span className="text-xs font-black text-slate-400">
-                    {getOrderCode(order)}
+                    {getOrderCode(group)}
                   </span>
                 </div>
                 <h3 className="text-base font-black leading-tight text-slate-900">
-                  {getPackageName(order)}
+                  {group.allPackages.join(" + ")}
                 </h3>
                 <div className="mt-3 space-y-2 text-sm text-slate-600">
                   <div className="flex items-start gap-2">
@@ -488,16 +510,16 @@ const TrackingMap = () => {
                       className="mt-0.5 shrink-0 text-slate-400"
                     />
                     <span className="font-semibold">
-                      {getCustomerName(order)}
+                      {getCustomerName(group)}
                     </span>
                   </div>
                   <div className="flex items-start gap-2">
                     <MapPin
                       size={16}
-                      className="mt-0.5 shrink-0 text-blue-500"
+                      className="mt-0.5 shrink-0 text-emerald-500"
                     />
                     <span className="leading-relaxed">
-                      {getAddressText(order)}
+                      {getAddressText(group)}
                     </span>
                   </div>
                   <div className="flex items-start gap-2">
@@ -506,15 +528,15 @@ const TrackingMap = () => {
                       className="mt-0.5 shrink-0 text-slate-400"
                     />
                     <span>
-                      {order.courier?.name || "Kurir belum ditugaskan"}
+                      {group.courier?.name || "Kurir belum ditugaskan"}
                     </span>
                   </div>
                 </div>
                 <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
                   {hasCoordinate
-                    ? isInDelivery(order.status) && hasCourierCoordinate(order)
-                      ? `Kurir: ${Number(order.courier_location.lat).toFixed(5)}, ${Number(order.courier_location.lng).toFixed(5)}`
-                      : `Tujuan: ${Number(order.lat).toFixed(5)}, ${Number(order.lng).toFixed(5)}`
+                    ? isInDelivery(group.status) && hasCourierCoordinate(group)
+                      ? `Kurir: ${Number(group.courier_location.lat).toFixed(5)}, ${Number(group.courier_location.lng).toFixed(5)}`
+                      : `Tujuan: ${Number(group.lat).toFixed(5)}, ${Number(group.lng).toFixed(5)}`
                     : "Koordinat belum ada di database alamat"}
                 </div>
               </div>

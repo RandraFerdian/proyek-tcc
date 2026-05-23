@@ -3,6 +3,7 @@ from typing import Optional
 
 class PackageBase(BaseModel):
     package_name: str
+    type: str = "Makanan Berat"
     description: Optional[str] = None
     price: float
 

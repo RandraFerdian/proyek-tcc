@@ -51,7 +51,7 @@ const AdminBottomNav = () => {
             className={({ isActive }) =>
               `flex h-14 min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl px-3 text-xs font-black transition-all sm:text-sm ${
                 isActive
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25"
+                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/25"
                   : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
               }`
             }

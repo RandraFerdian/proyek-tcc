@@ -91,7 +91,7 @@ const Couriers = () => {
             setEditingId(null);
             setIsModalOpen(true);
           }}
-          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-600/20 active:scale-95"
+          className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all shadow-md shadow-emerald-600/20 active:scale-95"
         >
           <Plus size={18} strokeWidth={2.5} /> Tambah Kurir
         </button>
@@ -116,7 +116,7 @@ const Couriers = () => {
                   <td className="py-4 px-6 font-bold text-slate-700">#{courier.id}</td>
                   <td className="py-4 px-6 text-slate-600 font-medium">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center font-bold text-xs border border-blue-100">
+                      <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center font-bold text-xs border border-emerald-100">
                         {courier.name.charAt(0)}
                       </div>
                       {courier.name}
@@ -137,7 +137,7 @@ const Couriers = () => {
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => handleEdit(courier)}
-                        className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-2 text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors"
                       >
                         <Edit2 size={18} />
                       </button>
@@ -188,7 +188,7 @@ const Couriers = () => {
                   value={formData.name}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
                   placeholder="Nama Lengkap"
                 />
               </div>
@@ -201,7 +201,7 @@ const Couriers = () => {
                   name="vehicle_plate"
                   value={formData.vehicle_plate}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all uppercase"
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all uppercase"
                   placeholder="AB 1234 CD"
                 />
               </div>
@@ -214,7 +214,7 @@ const Couriers = () => {
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
                   placeholder="08123456789"
                 />
               </div>
@@ -225,7 +225,7 @@ const Couriers = () => {
                   id="is_active"
                   checked={formData.is_active}
                   onChange={handleInputChange}
-                  className="w-4 h-4 text-blue-600 border-slate-200 rounded focus:ring-blue-500"
+                  className="w-4 h-4 text-emerald-600 border-slate-200 rounded focus:ring-emerald-500"
                 />
                 <label htmlFor="is_active" className="text-sm font-semibold text-slate-700">
                   Status Aktif
@@ -241,7 +241,7 @@ const Couriers = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 px-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-600/20 active:scale-95"
+                  className="flex-1 py-2.5 px-4 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all shadow-md shadow-emerald-600/20 active:scale-95"
                 >
                   Simpan
                 </button>

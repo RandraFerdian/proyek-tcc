@@ -23,6 +23,7 @@ import {
   Utensils,
 } from "lucide-react";
 import api from "../services/api";
+import { getPackageType } from "../constants/packageTypes";
 
 const pinIcon = new L.Icon({
   iconUrl: "https://cdn-icons-png.flaticon.com/512/2776/2776067.png",
@@ -52,10 +53,12 @@ const OrderFood = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const initialPackageId = location.state?.packageId;
+  const initialQuantity = location.state?.initialQuantity || 1;
+  const initialCart = location.state?.initialCart || null;
 
   // --- STATE DATA ---
   const [allPackages, setAllPackages] = useState([]); // Menyimpan semua pilihan menu katering
-  const [cart, setCart] = useState([]); // Menyimpan daftar menu katering yang dibeli
+  const [cart, setCart] = useState(initialCart || []); // Menyimpan daftar menu katering yang dibeli
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -78,13 +81,15 @@ const OrderFood = () => {
         const res = await api.get("/packages/");
         setAllPackages(res.data);
 
-        // Jika user masuk membawa satu menu utama dari halaman home
-        if (initialPackageId) {
+        // Jika user masuk membawa array cart dari halaman home
+        if (initialCart && initialCart.length > 0) {
+          setCart(initialCart);
+        } else if (initialPackageId) {
           const primaryItem = res.data.find(
             (item) => item.id === initialPackageId,
           );
           if (primaryItem) {
-            setCart([{ ...primaryItem, quantity: 1 }]);
+            setCart([{ ...primaryItem, quantity: initialQuantity }]);
           }
         }
       } catch (err) {
@@ -94,7 +99,7 @@ const OrderFood = () => {
       }
     };
     fetchData();
-  }, [initialPackageId]);
+  }, [initialPackageId, initialQuantity, initialCart]);
 
   // --- MANAJEMEN KERANJANG (CART OPERATIONS) ---
   const handleAddMenuToCart = (menu) => {
@@ -232,7 +237,7 @@ const OrderFood = () => {
   if (loading)
     return (
       <div className="h-screen flex items-center justify-center bg-white font-sans">
-        <div className="w-12 h-12 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-slate-100 border-t-emerald-600 rounded-full animate-spin"></div>
       </div>
     );
 
@@ -257,7 +262,7 @@ const OrderFood = () => {
         {/* --- DAFTAR MENU YANG AKAN DIBELI (KERANJANG) --- */}
         <section className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 space-y-4">
           <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 border-b border-slate-50 pb-3">
-            <ShoppingBag size={18} className="text-blue-600" /> Menu Yang
+            <ShoppingBag size={18} className="text-emerald-600" /> Menu Yang
             Dipilih
           </h3>
 
@@ -276,8 +281,11 @@ const OrderFood = () => {
                     <h4 className="font-bold text-slate-900 text-sm">
                       {item.package_name}
                     </h4>
-                    <p className="text-blue-600 font-bold text-xs mt-0.5">
+                    <p className="text-emerald-600 font-bold text-xs mt-0.5">
                       Rp {item.price.toLocaleString("id-ID")}
+                    </p>
+                    <p className="mt-1 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      {getPackageType(item)}
                     </p>
                   </div>
 
@@ -310,7 +318,7 @@ const OrderFood = () => {
         {/* --- FITUR BARU: PILIHAN TAMBAHAN MENU KATERING LAINNYA --- */}
         <section className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 space-y-4">
           <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 border-b border-slate-50 pb-3">
-            <Utensils size={18} className="text-blue-600" /> Tambah Pilihan Menu
+            <Utensils size={18} className="text-emerald-600" /> Tambah Pilihan Menu
             Lainnya
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[260px] overflow-y-auto pr-1">
@@ -326,11 +334,14 @@ const OrderFood = () => {
                   <p className="text-slate-500 font-semibold text-[11px] mt-0.5">
                     Rp {menu.price.toLocaleString("id-ID")}
                   </p>
+                  <p className="mt-1 text-[10px] font-black uppercase tracking-wider text-emerald-600">
+                    {getPackageType(menu)}
+                  </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleAddMenuToCart(menu)}
-                  className="px-3 py-1.5 bg-white border border-slate-200 hover:border-blue-600 hover:bg-blue-600 hover:text-white rounded-xl text-xs font-bold text-slate-700 transition-all shadow-sm active:scale-95"
+                  className="px-3 py-1.5 bg-white border border-slate-200 hover:border-emerald-600 hover:bg-emerald-600 hover:text-white rounded-xl text-xs font-bold text-slate-700 transition-all shadow-sm active:scale-95"
                 >
                   Tambah
                 </button>
@@ -343,7 +354,7 @@ const OrderFood = () => {
         <section className="bg-white rounded-[2rem] overflow-hidden shadow-sm border border-slate-100 relative">
           <div className="p-6 border-b border-slate-50 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Navigation size={20} className="text-blue-600" />
+              <Navigation size={20} className="text-emerald-600" />
               <h3 className="font-bold text-slate-800">
                 Tentukan Titik Pengiriman
               </h3>
@@ -351,7 +362,7 @@ const OrderFood = () => {
             <button
               type="button"
               onClick={handleLocateMe}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-bold rounded-xl transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 text-xs font-bold rounded-xl transition-all shadow-sm"
             >
               <Locate size={14} /> Lokasi Saya
             </button>
@@ -378,7 +389,7 @@ const OrderFood = () => {
                   Label Alamat
                 </label>
                 <input
-                  className="w-full mt-1.5 px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-blue-500/20 outline-none"
+                  className="w-full mt-1.5 px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500/20 outline-none"
                   placeholder="Contoh: Rumah, Kantor"
                   value={formData.address_label}
                   onChange={(e) =>
@@ -427,7 +438,7 @@ const OrderFood = () => {
               <input
                 type="datetime-local"
                 required
-                className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-blue-500/20 outline-none"
+                className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500/20 outline-none"
                 value={formData.scheduled_time}
                 onChange={(e) =>
                   setFormData({ ...formData, scheduled_time: e.target.value })
@@ -439,15 +450,15 @@ const OrderFood = () => {
                 <CreditCard size={14} /> Metode Pembayaran
               </label>
               <select
-                className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-blue-500/20 outline-none appearance-none cursor-pointer"
+                className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500/20 outline-none appearance-none cursor-pointer"
                 value={formData.payment_method}
                 onChange={(e) =>
                   setFormData({ ...formData, payment_method: e.target.value })
                 }
               >
                 <option value="cash">Cash on Delivery (COD)</option>
-                <option value="transfer">Bank Transfer</option>
-                <option value="ewallet">E-Wallet (OVO/Dana)</option>
+                <option value="transfer" disabled>Bank Transfer (Belum Tersedia)</option>
+                <option value="ewallet" disabled>E-Wallet (OVO/Dana) (Belum Tersedia)</option>
               </select>
             </div>
           </div>
@@ -457,7 +468,7 @@ const OrderFood = () => {
               <StickyNote size={14} /> Catatan Pesanan
             </label>
             <textarea
-              className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 outline-none resize-none"
+              className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 outline-none resize-none"
               rows="3"
               placeholder="Contoh: Tolong pisahkan kuah, tambah sendok..."
               value={formData.notes}
@@ -488,7 +499,7 @@ const OrderFood = () => {
               !formData.scheduled_time ||
               !formData.street
             }
-            className="px-8 py-4 bg-slate-900 text-white rounded-[1.5rem] font-bold shadow-xl shadow-slate-900/10 hover:bg-blue-600 hover:shadow-blue-500/20 transition-all active:scale-[0.98] disabled:bg-slate-300 disabled:shadow-none"
+            className="px-8 py-4 bg-slate-900 text-white rounded-[1.5rem] font-bold shadow-xl shadow-slate-900/10 hover:bg-emerald-600 hover:shadow-emerald-500/20 transition-all active:scale-[0.98] disabled:bg-slate-300 disabled:shadow-none"
           >
             {submitting ? "Memproses..." : "Pesan Sekarang"}
           </button>

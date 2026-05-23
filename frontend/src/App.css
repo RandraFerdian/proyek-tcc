@@ -19,6 +19,6 @@
 
 /* Base selection color */
 ::selection {
-  background: #bfdbfe; /* Tailwind blue-100 */
-  color: #1e3a8a; /* Tailwind blue-900 */
+  background: #dcfce7;
+  color: #14532d;
 }

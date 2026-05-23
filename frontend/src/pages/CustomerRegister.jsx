@@ -60,7 +60,7 @@ const CustomerRegister = () => {
   return (
     <div className="min-h-screen w-full bg-[#F4F7FB] px-4 py-12 font-sans overflow-y-auto relative flex justify-center items-center">
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] -left-[5%] w-[400px] h-[400px] bg-blue-200/30 rounded-full blur-[100px]" />
+        <div className="absolute top-[-10%] -left-[5%] w-[400px] h-[400px] bg-emerald-200/30 rounded-full blur-[100px]" />
         <div className="absolute bottom-[-10%] -right-[5%] w-[400px] h-[400px] bg-indigo-200/30 rounded-full blur-[100px]" />
       </div>
 
@@ -83,7 +83,7 @@ const CustomerRegister = () => {
           <div className="mb-10">
             <h1 className="text-4xl font-[800] text-slate-900 tracking-tight leading-tight">
               Buat Akun <br />
-              <span className="text-blue-600">Baru.</span>
+              <span className="text-emerald-600">Baru.</span>
             </h1>
             <p className="text-slate-500 mt-3 font-medium">
               Lengkapi detail di bawah untuk mulai memesan katering eksklusif.
@@ -114,7 +114,7 @@ const CustomerRegister = () => {
               </label>
               <div className="relative group">
                 <User
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors"
                   size={19}
                 />
                 <input
@@ -124,7 +124,7 @@ const CustomerRegister = () => {
                   placeholder="Nama Panjang Anda"
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full pl-12 pr-4 py-4 bg-slate-100/50 border-2 border-transparent focus:border-blue-500/20 focus:bg-white focus:ring-4 focus:ring-blue-500/5 outline-none rounded-[1.25rem] text-sm font-semibold text-slate-800 transition-all"
+                  className="w-full pl-12 pr-4 py-4 bg-slate-100/50 border-2 border-transparent focus:border-emerald-500/20 focus:bg-white focus:ring-4 focus:ring-emerald-500/5 outline-none rounded-[1.25rem] text-sm font-semibold text-slate-800 transition-all"
                 />
               </div>
             </div>
@@ -136,7 +136,7 @@ const CustomerRegister = () => {
               </label>
               <div className="relative group">
                 <Building2
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors"
                   size={19}
                 />
                 <input
@@ -145,7 +145,7 @@ const CustomerRegister = () => {
                   placeholder="Nama Perusahaan (Boleh dikosongkan)"
                   value={formData.company}
                   onChange={handleChange}
-                  className="w-full pl-12 pr-4 py-4 bg-slate-100/50 border-2 border-transparent focus:border-blue-500/20 focus:bg-white focus:ring-4 focus:ring-blue-500/5 outline-none rounded-[1.25rem] text-sm font-semibold text-slate-800 transition-all"
+                  className="w-full pl-12 pr-4 py-4 bg-slate-100/50 border-2 border-transparent focus:border-emerald-500/20 focus:bg-white focus:ring-4 focus:ring-emerald-500/5 outline-none rounded-[1.25rem] text-sm font-semibold text-slate-800 transition-all"
                 />
               </div>
             </div>
@@ -159,7 +159,7 @@ const CustomerRegister = () => {
                 </label>
                 <div className="relative group">
                   <Phone
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors"
                     size={19}
                   />
                   <input
@@ -169,7 +169,7 @@ const CustomerRegister = () => {
                     placeholder="08123456789"
                     value={formData.phone}
                     onChange={handleChange}
-                    className="w-full pl-12 pr-4 py-4 bg-slate-100/50 border-2 border-transparent focus:border-blue-500/20 focus:bg-white focus:ring-4 focus:ring-blue-500/5 outline-none rounded-[1.25rem] text-sm font-semibold text-slate-800 transition-all"
+                    className="w-full pl-12 pr-4 py-4 bg-slate-100/50 border-2 border-transparent focus:border-emerald-500/20 focus:bg-white focus:ring-4 focus:ring-emerald-500/5 outline-none rounded-[1.25rem] text-sm font-semibold text-slate-800 transition-all"
                   />
                 </div>
               </div>
@@ -181,7 +181,7 @@ const CustomerRegister = () => {
                 </label>
                 <div className="relative group">
                   <Mail
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors"
                     size={19}
                   />
                   <input
@@ -191,7 +191,7 @@ const CustomerRegister = () => {
                     placeholder="user@mail.com"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full pl-12 pr-4 py-4 bg-slate-100/50 border-2 border-transparent focus:border-blue-500/20 focus:bg-white focus:ring-4 focus:ring-blue-500/5 outline-none rounded-[1.25rem] text-sm font-semibold text-slate-800 transition-all"
+                    className="w-full pl-12 pr-4 py-4 bg-slate-100/50 border-2 border-transparent focus:border-emerald-500/20 focus:bg-white focus:ring-4 focus:ring-emerald-500/5 outline-none rounded-[1.25rem] text-sm font-semibold text-slate-800 transition-all"
                   />
                 </div>
               </div>
@@ -204,7 +204,7 @@ const CustomerRegister = () => {
               </label>
               <div className="relative group">
                 <Lock
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors"
                   size={19}
                 />
                 <input
@@ -214,7 +214,7 @@ const CustomerRegister = () => {
                   placeholder="Password akun"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full pl-12 pr-4 py-4 bg-slate-100/50 border-2 border-transparent focus:border-blue-500/20 focus:bg-white focus:ring-4 focus:ring-blue-500/5 outline-none rounded-[1.25rem] text-sm font-semibold text-slate-800 transition-all"
+                  className="w-full pl-12 pr-4 py-4 bg-slate-100/50 border-2 border-transparent focus:border-emerald-500/20 focus:bg-white focus:ring-4 focus:ring-emerald-500/5 outline-none rounded-[1.25rem] text-sm font-semibold text-slate-800 transition-all"
                 />
               </div>
             </div>
@@ -223,7 +223,7 @@ const CustomerRegister = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-bold text-base shadow-xl shadow-slate-900/10 hover:bg-blue-600 hover:shadow-blue-500/20 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 group mt-4"
+              className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-bold text-base shadow-xl shadow-slate-900/10 hover:bg-emerald-600 hover:shadow-emerald-500/20 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 group mt-4"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -245,7 +245,7 @@ const CustomerRegister = () => {
               Sudah memiliki akun?{" "}
               <Link
                 to="/customer/login"
-                className="text-blue-600 font-bold hover:underline underline-offset-4"
+                className="text-emerald-600 font-bold hover:underline underline-offset-4"
               >
                 Masuk di sini
               </Link>
