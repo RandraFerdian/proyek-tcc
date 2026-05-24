@@ -13,6 +13,7 @@ from ..models.package_model import CateringPackage
 from ..models.route_model import DeliveryRoute
 from ..models.courier_model import Courier
 from ..core.security import get_current_customer 
+from ..services import firebase_service
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
@@ -210,6 +211,15 @@ def update_order_status(order_id: int, payload: OrderStatusUpdate, db: Session =
         order.delivered_at = datetime.utcnow()
     db.commit()
     db.refresh(order)
+    
+    # Integrasi Firebase NoSQL: Update status dan notifikasi
+    firebase_service.update_delivery_status(order_id, payload.status)
+    firebase_service.send_customer_notification(
+        customer_id=order.customer_id, 
+        title="Status Pesanan Diperbarui", 
+        message=f"Status pesanan {order.order_code} sekarang adalah: {payload.status}"
+    )
+    
     return serialize_order(order, db)
 
 @router.put("/{order_id}/assign-courier")

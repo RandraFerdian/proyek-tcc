@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { X, Send, UserRound, Truck } from "lucide-react";
 import api from "../services/api";
+import { database } from "../services/firebaseConfig";
+import { ref, onValue, push, set } from "firebase/database";
 
 const ChatWindow = ({ orderCode, role, userName, onClose }) => {
   const [messages, setMessages] = useState([]);
@@ -18,9 +20,42 @@ const ChatWindow = ({ orderCode, role, userName, onClose }) => {
   };
 
   useEffect(() => {
+    // Ambil history awal dari MySQL
     fetchMessages();
-    const interval = setInterval(fetchMessages, 3000); // Polling every 3s
-    return () => clearInterval(interval);
+    
+    // Listen chat baru secara Real-time dari Firebase NoSQL
+    const chatRef = ref(database, `chats/order_${orderCode}`);
+    const unsubscribe = onValue(chatRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        // Firebase me-return object dengan ID unik, kita ubah ke array
+        const chatArray = Object.values(data);
+        
+        // Kita bandingkan length atau update dari history. 
+        // Cara termudah adalah mengandalkan Firebase sepenuhnya untuk sesi real-time.
+        // Di sini kita gabung history dari MySQL dengan Firebase dengan menghapus duplikat,
+        // namun untuk sederhananya kita bisa menimpa atau mem-push pesan yang belum ada.
+        
+        setMessages((prev) => {
+          // Hanya ambil pesan baru dari Firebase yang belum ada di MySQL
+          const merged = [...prev];
+          chatArray.forEach(fbMsg => {
+            // Cek apakah pesan sudah ada berdasarkan timestamp dan isi
+            const exists = merged.some(m => m.message === fbMsg.message && m.sender_role === fbMsg.sender_role);
+            if (!exists) {
+              merged.push(fbMsg);
+            }
+          });
+          
+          // Sort by timestamp
+          merged.sort((a, b) => new Date(a.timestamp || a.created_at) - new Date(b.timestamp || b.created_at));
+          return merged;
+        });
+        scrollToBottom();
+      }
+    });
+
+    return () => unsubscribe();
   }, [orderCode]);
 
   const scrollToBottom = () => {

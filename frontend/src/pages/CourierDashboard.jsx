@@ -28,7 +28,6 @@ import "leaflet/dist/leaflet.css";
 import { divIcon } from "leaflet";
 import ChatWindow from "../components/ChatWindow";
 
-
 const kitchenIcon = divIcon({
   className: "custom-icon",
   html: `<div class="bg-amber-500 w-10 h-10 flex items-center justify-center rounded-full shadow-lg border-[2.5px] border-white text-white text-lg">🍳</div>`,
@@ -56,13 +55,19 @@ const courierIcon = divIcon({
   popupAnchor: [0, -15],
 });
 
-const RoutePolyline = ({ waypoints, color = "#2563eb", weight = 4, dashArray, className }) => {
+const RoutePolyline = ({
+  waypoints,
+  color = "#2563eb",
+  weight = 4,
+  dashArray,
+  className,
+}) => {
   const [path, setPath] = useState([]);
 
   useEffect(() => {
     const fetchRoute = async () => {
       try {
-        const coordsString = waypoints.map(p => `${p[1]},${p[0]}`).join(';');
+        const coordsString = waypoints.map((p) => `${p[1]},${p[0]}`).join(";");
         const response = await fetch(
           `https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`,
         );
@@ -250,18 +255,22 @@ const CourierDashboard = () => {
             }
 
             if (shouldUpdate) {
-              api.post(`/couriers/${courierId}/location`, {
-                lat: newLat,
-                lng: newLng,
-                order_id: activeOrder.id,
-              }).catch((err) => console.error("Auto update location failed", err));
+              api
+                .post(`/couriers/${courierId}/location`, {
+                  lat: newLat,
+                  lng: newLng,
+                  order_id: activeOrder.id,
+                })
+                .catch((err) =>
+                  console.error("Auto update location failed", err),
+                );
               return { lat: newLat, lng: newLng };
             }
             return prev;
           });
         },
         (err) => console.error("Watch position error:", err),
-        { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 },
       );
     }
 
@@ -303,14 +312,18 @@ const CourierDashboard = () => {
             resolve(true);
           } catch (err) {
             console.error("Error updating courier location:", err);
-            setError(err.response?.data?.detail || "Gagal mengirim lokasi kurir.");
+            setError(
+              err.response?.data?.detail || "Gagal mengirim lokasi kurir.",
+            );
             resolve(false);
           } finally {
             setLocationSending(false);
           }
         },
         () => {
-          setError("Tugas berhasil, namun GPS HP belum terbaca. Pastikan GPS menyala.");
+          setError(
+            "Tugas berhasil, namun GPS HP belum terbaca. Pastikan GPS menyala.",
+          );
           setLocationSending(false);
           resolve(false);
         },
@@ -441,10 +454,15 @@ const CourierDashboard = () => {
                 <LocateFixed size={17} />
                 Lokasi
               </button>
-              {["dikirim", "in transit"].includes((order.status || "").toLowerCase()) && (
+              {["dikirim", "in transit"].includes(
+                (order.status || "").toLowerCase(),
+              ) && (
                 <button
                   onClick={() => {
-                    setActiveChatCode(order.order_code || `ORD-${String(order.id).padStart(4, "0")}`);
+                    setActiveChatCode(
+                      order.order_code ||
+                        `ORD-${String(order.id).padStart(4, "0")}`,
+                    );
                     setShowChat(true);
                   }}
                   className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-black text-white transition hover:bg-blue-700"
@@ -512,50 +530,84 @@ const CourierDashboard = () => {
           </div>
         )}
 
-                {activeOrder && (
+        {activeOrder && (
           <section className="mb-6 rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm bg-white">
             <div className="bg-emerald-600 px-5 py-3 flex items-center justify-between text-white">
               <div className="flex items-center gap-2">
                 <Navigation size={18} />
-                <h2 className="font-black text-sm uppercase tracking-wider">Live Route: {getOrderCode(activeOrder)}</h2>
+                <h2 className="font-black text-sm uppercase tracking-wider">
+                  Live Route: {getOrderCode(activeOrder)}
+                </h2>
               </div>
             </div>
             <div className="h-[400px] w-full relative z-0">
               <MapContainer
-                center={[parseFloat(activeOrder.lat) || KITCHEN_LOCATION.lat, parseFloat(activeOrder.lng) || KITCHEN_LOCATION.lng]}
+                center={[
+                  parseFloat(activeOrder.lat) || KITCHEN_LOCATION.lat,
+                  parseFloat(activeOrder.lng) || KITCHEN_LOCATION.lng,
+                ]}
                 zoom={14}
                 style={{ height: "100%", width: "100%" }}
                 zoomControl={false}
               >
                 <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
                 <ZoomControl position="bottomright" />
-                
-                <Marker position={[KITCHEN_LOCATION.lat, KITCHEN_LOCATION.lng]} icon={kitchenIcon}>
+
+                <Marker
+                  position={[KITCHEN_LOCATION.lat, KITCHEN_LOCATION.lng]}
+                  icon={kitchenIcon}
+                >
                   <Popup className="clean-popup">Dapur Catering</Popup>
                 </Marker>
 
                 {parseFloat(activeOrder.lat) && parseFloat(activeOrder.lng) && (
-                  <Marker position={[parseFloat(activeOrder.lat), parseFloat(activeOrder.lng)]} icon={destinationIcon}>
-                    <Popup className="clean-popup">Tujuan: {getCustomerName(activeOrder)}</Popup>
+                  <Marker
+                    position={[
+                      parseFloat(activeOrder.lat),
+                      parseFloat(activeOrder.lng),
+                    ]}
+                    icon={destinationIcon}
+                  >
+                    <Popup className="clean-popup">
+                      Tujuan: {getCustomerName(activeOrder)}
+                    </Popup>
                   </Marker>
                 )}
 
                 {lastLocation && (
-                  <Marker position={[lastLocation.lat, lastLocation.lng]} icon={courierIcon}>
+                  <Marker
+                    position={[lastLocation.lat, lastLocation.lng]}
+                    icon={courierIcon}
+                  >
                     <Popup className="clean-popup">Posisi Anda (Kurir)</Popup>
                   </Marker>
                 )}
 
-                {lastLocation && parseFloat(activeOrder.lat) && parseFloat(activeOrder.lng) ? (
+                {lastLocation &&
+                parseFloat(activeOrder.lat) &&
+                parseFloat(activeOrder.lng) ? (
                   <RoutePolyline
-                    waypoints={[ [KITCHEN_LOCATION.lat, KITCHEN_LOCATION.lng], [lastLocation.lat, lastLocation.lng], [parseFloat(activeOrder.lat), parseFloat(activeOrder.lng)] ]}
+                    waypoints={[
+                      [lastLocation.lat, lastLocation.lng],
+                      [
+                        parseFloat(activeOrder.lat),
+                        parseFloat(activeOrder.lng),
+                      ],
+                    ]}
                     color="#10b981"
                     className="animate-pulse"
                   />
                 ) : (
-                  parseFloat(activeOrder.lat) && parseFloat(activeOrder.lng) && (
+                  parseFloat(activeOrder.lat) &&
+                  parseFloat(activeOrder.lng) && (
                     <RoutePolyline
-                      waypoints={[ [KITCHEN_LOCATION.lat, KITCHEN_LOCATION.lng], [parseFloat(activeOrder.lat), parseFloat(activeOrder.lng)] ]}
+                      waypoints={[
+                        [KITCHEN_LOCATION.lat, KITCHEN_LOCATION.lng],
+                        [
+                          parseFloat(activeOrder.lat),
+                          parseFloat(activeOrder.lng),
+                        ],
+                      ]}
                       color="#94a3b8"
                       dashArray="5, 10"
                     />
@@ -667,11 +719,11 @@ const CourierDashboard = () => {
       </div>
 
       {showChat && activeChatCode && (
-        <ChatWindow 
-          orderCode={activeChatCode} 
-          role="courier" 
-          userName={courierName} 
-          onClose={() => setShowChat(false)} 
+        <ChatWindow
+          orderCode={activeChatCode}
+          role="courier"
+          userName={courierName}
+          onClose={() => setShowChat(false)}
         />
       )}
     </div>

@@ -259,7 +259,7 @@ const TrackingMap = () => {
   }, [orders, searchTerm]);
 
   const mappedGroups = filteredGroups.filter((group) =>
-    getOrderMarkerPosition(group),
+    isInDelivery(group.status) && getOrderMarkerPosition(group)
   );
   const withoutCoordinateCount = filteredGroups.filter(
     (group) => !hasDatabaseCoordinate(group),
@@ -348,41 +348,41 @@ const TrackingMap = () => {
               </Marker>
 
               {/* Logika Tampilan Berdasarkan Status */}
-              {isDelivering && courierLat && courierLng ? (
-                <>
-                  <Marker position={[courierLat, courierLng]} icon={courierIcon}>
-                    <Popup className="rounded-xl border-0 font-sans shadow-lg">
-                      <div className="min-w-[210px] p-1 text-center">
-                        <div className="mb-2 inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border-emerald-100">
-                          🛵 Kurir
-                        </div>
-                        <h3 className="text-sm font-black text-slate-800">
-                          {group.courier?.name || "Kurir"}
-                        </h3>
-                        <p className="mt-1 text-xs font-semibold text-emerald-600 leading-tight">
-                          Sedang Mengantar Pesanan
-                        </p>
-                        <p className="mt-2 text-xs text-slate-500 font-bold">
-                          {getOrderCode(group)}
-                        </p>
+              {isDelivering && courierLat && courierLng && (
+                <Marker position={[courierLat, courierLng]} icon={courierIcon}>
+                  <Popup className="rounded-xl border-0 font-sans shadow-lg">
+                    <div className="min-w-[210px] p-1 text-center">
+                      <div className="mb-2 inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border-emerald-100">
+                        🛵 Kurir
                       </div>
-                    </Popup>
-                  </Marker>
-                  <RoutePolyline
-                    waypoints={[ [kitchenLat, kitchenLng], [courierLat, courierLng], [destLat, destLng] ]}
-                    color="#10b981"
-                    className="animate-pulse"
-                  />
-                </>
-              ) : (
-                <>
-                  <RoutePolyline
-                    waypoints={[ [kitchenLat, kitchenLng], [destLat, destLng] ]}
-                    color="#94a3b8"
-                    dashArray="5, 10"
-                  />
-                </>
+                      <h3 className="text-sm font-black text-slate-800">
+                        {group.courier?.name || "Kurir"}
+                      </h3>
+                      <p className="mt-1 text-xs font-semibold text-emerald-600 leading-tight">
+                        Sedang Mengantar Pesanan
+                      </p>
+                      <p className="mt-2 text-xs text-slate-500 font-bold">
+                        {getOrderCode(group)}
+                      </p>
+                    </div>
+                  </Popup>
+                </Marker>
               )}
+
+              {/* Tampilkan Rute HANYA jika statusnya sedang dikirim */}
+              {isDelivering && courierLat && courierLng ? (
+                <RoutePolyline
+                  waypoints={[ [courierLat, courierLng], [destLat, destLng] ]}
+                  color="#10b981"
+                  className="animate-pulse"
+                />
+              ) : isDelivering ? (
+                <RoutePolyline
+                  waypoints={[ [kitchenLat, kitchenLng], [destLat, destLng] ]}
+                  color="#94a3b8"
+                  dashArray="5, 10"
+                />
+              ) : null}
             </Fragment>
           );
         })}

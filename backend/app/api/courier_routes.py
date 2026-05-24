@@ -8,6 +8,7 @@ from ..models.courier_model import Courier
 from ..models.route_model import DeliveryRoute
 from ..schemas.courier_schema import CourierCreate, CourierOut
 from ..core.security import create_access_token
+from ..services import firebase_service
 
 router = APIRouter(prefix="/couriers", tags=["Couriers"])
 
@@ -110,5 +111,14 @@ def update_courier_location(courier_id: int, payload: CourierLocationUpdate, db:
     db.add(route)
     db.commit()
     db.refresh(route)
+
+    # Integrasi Firebase NoSQL: Update lokasi kurir secara real-time
+    if payload.order_id:
+        firebase_service.update_courier_location(
+            order_id=payload.order_id,
+            courier_id=courier_id,
+            latitude=payload.lat,
+            longitude=payload.lng
+        )
 
     return {"status": "success", "location": waypoint}

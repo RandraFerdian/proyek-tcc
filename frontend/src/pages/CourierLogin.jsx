@@ -35,7 +35,10 @@ const CourierLogin = () => {
       localStorage.setItem("courier_name", response.data.name);
       navigate("/courier");
     } catch (err) {
-      setError(err.response?.data?.detail || "Login kurir gagal. Cek nomor HP dan plat kendaraan.");
+      setError(
+        err.response?.data?.detail ||
+          "Login kurir gagal. Cek nomor HP dan plat kendaraan.",
+      );
     } finally {
       setLoading(false);
     }
@@ -52,7 +55,10 @@ const CourierLogin = () => {
         to="/"
         className="group absolute left-6 top-6 z-20 flex items-center gap-2 text-sm font-semibold text-slate-400 transition-colors hover:text-slate-700"
       >
-        <ArrowLeft size={18} className="transition-transform group-hover:-translate-x-1" />
+        <ArrowLeft
+          size={18}
+          className="transition-transform group-hover:-translate-x-1"
+        />
         <span>Beranda</span>
       </Link>
 
@@ -62,8 +68,12 @@ const CourierLogin = () => {
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 ring-1 ring-emerald-100">
               <Truck size={32} className="text-emerald-600" />
             </div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-900">Kurir Portal</h1>
-            <p className="mt-1.5 font-medium text-slate-500">Masuk untuk mengambil dan mengantar pesanan</p>
+            <h1 className="text-3xl font-black tracking-tight text-slate-900">
+              Kurir Portal
+            </h1>
+            <p className="mt-1.5 font-medium text-slate-500">
+              Masuk untuk mengambil dan mengantar pesanan
+            </p>
             <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-4 py-1.5">
               <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
               <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">
@@ -84,7 +94,10 @@ const CourierLogin = () => {
                 Nomor HP
               </label>
               <div className="group relative">
-                <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-emerald-500" />
+                <Phone
+                  size={18}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-emerald-500"
+                />
                 <input
                   type="text"
                   required
@@ -101,12 +114,17 @@ const CourierLogin = () => {
                 Plat Kendaraan
               </label>
               <div className="group relative">
-                <LockKeyhole size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-emerald-500" />
+                <LockKeyhole
+                  size={18}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-emerald-500"
+                />
                 <input
                   type="text"
                   required
                   value={vehiclePlate}
-                  onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())}
+                  onChange={(e) =>
+                    setVehiclePlate(e.target.value.toUpperCase())
+                  }
                   placeholder="AB 1234 CD"
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3.5 pl-12 pr-4 uppercase text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-500/10"
                 />
@@ -119,7 +137,12 @@ const CourierLogin = () => {
               className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-4 font-black text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-70"
             >
               {loading ? "Menghubungkan..." : "Masuk ke Tugas Kurir"}
-              {!loading && <ArrowRight size={20} className="transition-transform group-hover:translate-x-1" />}
+              {!loading && (
+                <ArrowRight
+                  size={20}
+                  className="transition-transform group-hover:translate-x-1"
+                />
+              )}
             </button>
           </form>
         </div>

@@ -126,22 +126,28 @@ const CustomerHome = () => {
     const fetchData = async () => {
       try {
         const packageRes = await api.get("/packages/");
-        // PERBAIKAN: Memastikan data selalu berbentuk array, meski API return null
         setPackages(packageRes.data || []);
-
+      } catch (err) {
+        console.error("Gagal mengambil data paket:", err);
+      }
+    };
+    
+    const fetchOrders = async () => {
+      try {
         const orderRes = await api.get("/orders/me");
-        // PERBAIKAN: Memastikan data selalu berbentuk array
         setOrders(orderRes.data || []);
       } catch (err) {
-        console.error("Gagal mengambil data:", err);
-        // Fallback aman jika terjadi error (seperti koneksi terputus)
-        setPackages([]);
-        setOrders([]);
+        console.error("Gagal mengambil data pesanan:", err);
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
+    fetchOrders();
+
+    const interval = setInterval(fetchOrders, 5000); // Poll every 5s for map & chat updates
+    return () => clearInterval(interval);
   }, []);
 
   const activeTransactions = (orders || []).reduce((acc, order) => {
@@ -169,15 +175,16 @@ const CustomerHome = () => {
       if (isNaN(destLat) || isNaN(destLng)) return;
 
       try {
-        let coordsString = `${kitchenLng},${kitchenLat}`;
+        let coordsString = "";
         const isDelivering = ["dikirim", "in transit"].includes((tx.status || "").toLowerCase());
         const courierLat = tx.courier_location?.lat ? parseFloat(tx.courier_location.lat) : null;
         const courierLng = tx.courier_location?.lng ? parseFloat(tx.courier_location.lng) : null;
 
         if (isDelivering && courierLat && courierLng) {
-            coordsString += `;${courierLng},${courierLat}`;
+            coordsString = `${courierLng},${courierLat};${destLng},${destLat}`;
+        } else {
+            coordsString = `${kitchenLng},${kitchenLat};${destLng},${destLat}`;
         }
-        coordsString += `;${destLng},${destLat}`;
 
         const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`);
         const data = await res.json();
@@ -260,7 +267,7 @@ const CustomerHome = () => {
                         </Popup>
                       </Marker>
                       <Polyline 
-                        positions={routeCoords || [ [kitchenLat, kitchenLng], [courierLat, courierLng], [destLat, destLng] ]} 
+                        positions={routeCoords || [ [courierLat, courierLng], [destLat, destLng] ]} 
                         color="#10b981" 
                         weight={4} 
                       />

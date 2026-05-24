@@ -10,9 +10,12 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { ArrowLeft, Clock, MapPin, Navigation, Phone } from "lucide-react";
+import { ArrowLeft, Clock, MapPin, Navigation, Phone, MessageCircle } from "lucide-react";
 import api from "../services/api";
+import ChatWindow from "../components/ChatWindow";
 import { KITCHEN_LOCATION } from "../constants/locations";
+import { database } from "../services/firebaseConfig";
+import { ref, onValue } from "firebase/database";
 
 const defaultPosition = [KITCHEN_LOCATION.lat, KITCHEN_LOCATION.lng];
 
@@ -74,6 +77,7 @@ const CustomerTracking = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showChat, setShowChat] = useState(false);
 
   // STATE BARU: Untuk menyimpan titik rute jalan raya OSRM
   const [routePath, setRoutePath] = useState([]);
@@ -92,11 +96,51 @@ const CustomerTracking = () => {
   }, [orderId]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // 1. Fetch initial order data from MySQL
     fetchOrder();
-    const interval = setInterval(fetchOrder, 7000);
-    return () => clearInterval(interval);
-  }, [fetchOrder]);
+
+    // 2. Setup Firebase Realtime Listeners for NoSQL Live Tracking
+    const trackingRef = ref(database, `live_tracking/order_${orderId}`);
+    const trackingListener = onValue(trackingRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setOrder((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            courier_location: {
+              ...prev.courier_location,
+              lat: data.latitude,
+              lng: data.longitude,
+              updated_at: data.timestamp
+            }
+          };
+        });
+      }
+    });
+
+    // 3. Setup Firebase listener for Order Status
+    const statusRef = ref(database, `delivery_status/order_${orderId}`);
+    const statusListener = onValue(statusRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setOrder((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            status: data.status,
+            delivered_at: data.updated_at
+          };
+        });
+      }
+    });
+
+    return () => {
+      // Unsubscribe listeners when component unmounts
+      trackingListener();
+      statusListener();
+    };
+  }, [fetchOrder, orderId]);
 
   const courierLoc = order?.courier_location;
   const destination =
@@ -263,9 +307,22 @@ const CustomerTracking = () => {
                 </p>
               )}
             </div>
-            <button className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-600 transition-all hover:bg-slate-100 hover:text-emerald-600 active:scale-90">
-              <Phone size={20} />
+            
+            {/* Tombol Chat - Selalu tampil agar user tahu bisa chat */}
+            <button 
+              onClick={() => setShowChat(true)}
+              className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-600 transition-all hover:bg-slate-100 hover:text-emerald-600 active:scale-90 relative"
+            >
+              <MessageCircle size={20} />
+              {/* Optional: Indicator if there's new chat, for now just static */}
             </button>
+            
+            <a 
+              href={`tel:${order?.courier?.phone || ""}`}
+              className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-600 transition-all hover:bg-slate-100 hover:text-emerald-600 active:scale-90 flex items-center justify-center"
+            >
+              <Phone size={20} />
+            </a>
           </div>
 
           <div className="mt-6 grid gap-3 border-t border-slate-100 pt-5">
@@ -311,6 +368,16 @@ const CustomerTracking = () => {
           </div>
         </div>
       </div>
+
+      {/* Render ChatWindow if active */}
+      {showChat && order?.order_code && (
+        <ChatWindow
+          orderCode={order.order_code}
+          role="customer"
+          userName={"Pelanggan"}
+          onClose={() => setShowChat(false)}
+        />
+      )}
     </div>
   );
 };
