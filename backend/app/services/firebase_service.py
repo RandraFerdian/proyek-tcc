@@ -2,19 +2,33 @@ import firebase_admin
 from firebase_admin import credentials, db
 from typing import Optional
 from app.core.config import settings
+import json
 
 # Fungsi ini akan menginisialisasi koneksi ke Firebase Realtime Database
 def init_firebase():
     # Mencegah inisialisasi ganda jika server me-reload
     if not firebase_admin._apps:
         try:
-            cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS_PATH)
+            # 1. Cek apakah ada JSON String dari Cloud Run (Environment Variable)
+            if settings.FIREBASE_CREDENTIALS_JSON:
+                cred_dict = json.loads(settings.FIREBASE_CREDENTIALS_JSON)
+                cred = credentials.Certificate(cred_dict)
+            
+            # 2. Jika tidak ada, gunakan file fisik (saat berjalan di laptop/lokal)
+            elif settings.FIREBASE_CREDENTIALS_PATH:
+                cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS_PATH)
+                
+            else:
+                raise ValueError("Kredensial Firebase (File/JSON) tidak ditemukan!")
+
+            # Inisialisasi
             firebase_admin.initialize_app(cred, {
                 'databaseURL': settings.FIREBASE_DATABASE_URL
             })
             print("Firebase terhubung!")
+            
         except Exception as e:
-            print(f"Peringatan: Gagal menghubungkan Firebase. Pastikan file {settings.FIREBASE_CREDENTIALS_PATH} ada. Error: {e}")
+            print(f"Peringatan: Gagal menghubungkan Firebase. Error: {e}")
 
 # Fungsi bantuan untuk menyimpan log perubahan status ke NoSQL
 def log_delivery_event_to_nosql(order_id: int, status: str, location: Optional[dict] = None) -> None:

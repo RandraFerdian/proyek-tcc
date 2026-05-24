@@ -1,0 +1,15 @@
+# Gunakan image Python versi ringan
+FROM python:3.10-slim
+
+# Atur direktori kerja di dalam container
+WORKDIR /app
+
+# Salin file requirements dan instal library
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Salin seluruh kode backend Anda
+COPY . .
+
+# Jalankan server FastAPI menggunakan Uvicorn
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
