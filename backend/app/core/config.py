@@ -12,7 +12,6 @@ class Settings(BaseSettings):
 
     # Konfigurasi MySQL dari environment variables
     DB_USER: Optional[str] = os.getenv("DB_USER")
-    # Beri default string kosong ("") untuk menghindari error nilai None
     DB_PASS: Optional[str] = os.getenv("DB_PASS", "") 
     DB_HOST: str = os.getenv("DB_HOST", "localhost")
     DB_PORT: str = os.getenv("DB_PORT", "3306")
