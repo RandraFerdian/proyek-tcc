@@ -1,0 +1,88 @@
+{
+  "hash": "ed678719",
+  "configHash": "69e170ca",
+  "lockfileHash": "6c509e4c",
+  "browserHash": "221bc15a",
+  "optimized": {
+    "axios": {
+      "src": "../../node_modules/axios/index.js",
+      "file": "axios.js",
+      "fileHash": "92713608",
+      "needsInterop": false
+    },
+    "firebase/app": {
+      "src": "../../node_modules/firebase/app/dist/esm/index.esm.js",
+      "file": "firebase_app.js",
+      "fileHash": "4d9b0b34",
+      "needsInterop": false
+    },
+    "firebase/database": {
+      "src": "../../node_modules/firebase/database/dist/esm/index.esm.js",
+      "file": "firebase_database.js",
+      "fileHash": "a5d8e2e3",
+      "needsInterop": false
+    },
+    "leaflet": {
+      "src": "../../node_modules/leaflet/dist/leaflet-src.js",
+      "file": "leaflet.js",
+      "fileHash": "f3788a3c",
+      "needsInterop": true
+    },
+    "lucide-react": {
+      "src": "../../node_modules/lucide-react/dist/esm/lucide-react.mjs",
+      "file": "lucide-react.js",
+      "fileHash": "17013fa2",
+      "needsInterop": false
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "09644354",
+      "needsInterop": true
+    },
+    "react-dom/server": {
+      "src": "../../node_modules/react-dom/server.browser.js",
+      "file": "react-dom_server.js",
+      "fileHash": "9ca5b015",
+      "needsInterop": true
+    },
+    "react-leaflet": {
+      "src": "../../node_modules/react-leaflet/lib/index.js",
+      "file": "react-leaflet.js",
+      "fileHash": "feb621f5",
+      "needsInterop": false
+    },
+    "react-router-dom": {
+      "src": "../../node_modules/react-router-dom/dist/index.mjs",
+      "file": "react-router-dom.js",
+      "fileHash": "48cacd07",
+      "needsInterop": false
+    },
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "67dc29b8",
+      "needsInterop": true
+    },
+    "react/jsx-dev-runtime": {
+      "src": "../../node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "097c2c3a",
+      "needsInterop": true
+    }
+  },
+  "chunks": {
+    "chunk-CYJPkc-J": {
+      "file": "chunk-CYJPkc-J.js",
+      "isDynamicEntry": false
+    },
+    "index.esm-p-KYuGcS": {
+      "file": "index.esm-p-KYuGcS.js",
+      "isDynamicEntry": false
+    },
+    "react-dom-0R_uKCUX": {
+      "file": "react-dom-0R_uKCUX.js",
+      "isDynamicEntry": false
+    }
+  }
+}
