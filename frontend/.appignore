@@ -1,0 +1,9 @@
+node_modules/
+src/
+public/
+.git/
+.github/
+README.md
+.env
+.env.example
+*.log
