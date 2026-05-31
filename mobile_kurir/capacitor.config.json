@@ -1,9 +1,0 @@
-{
-  "appId": "com.katering.kurir",
-  "appName": "Katering Kurir",
-  "webDir": "www",
-  "server": {
-    "url": "https://d-52-489112.uc.r.appspot.com/courier/login",
-    "cleartext": true
-  }
-}

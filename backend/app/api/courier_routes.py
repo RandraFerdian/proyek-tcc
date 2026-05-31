@@ -52,6 +52,7 @@ def login_courier(payload: CourierLoginRequest, db: Session = Depends(get_db)):
         "name": courier.name,
         "phone": courier.phone,
         "vehicle_plate": courier.vehicle_plate,
+        "is_active": courier.is_active,
     }
 
 @router.get("/", response_model=list[CourierOut])
